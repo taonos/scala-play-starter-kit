@@ -1,0 +1,21 @@
+version: '2'
+
+volumes:
+  pg-data:
+    driver: local
+
+services:
+  pg:
+    image: sameersbn/postgresql:9.6-2
+    ports:
+      - "27001:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql
+    environment:
+      - DEBUG=false
+      - DB_USER=play
+      - DB_PASS=playplay
+      - DB_NAME=play
+#      - USERMAP_UID=65534
+#      - USERMAP_GID=65533
+      - PG_TRUST_LOCALNET=true
