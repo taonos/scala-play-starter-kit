@@ -27,7 +27,7 @@ lazy val slickDeps = Seq(
   )
 
 lazy val dbDeps = Seq(
-  "com.h2database" % "h2" % "1.4.192",
+//  "com.h2database" % "h2" % "1.4.192",
   "org.postgresql" % "postgresql" % "42.1.4",
   "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
   ) ++
