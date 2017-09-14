@@ -16,6 +16,3 @@ services:
       - DB_USER=play
       - DB_PASS=playplay
       - DB_NAME=play
-#      - USERMAP_UID=65534
-#      - USERMAP_GID=65533
-      - PG_TRUST_LOCALNET=true
