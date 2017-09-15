@@ -34,6 +34,8 @@ class HomeController @Inject()(cc: ControllerComponents,
 //  }
   def index = Action.async { implicit request =>
     val resultingUsers: Future[Seq[UsersRow]] = dbConfig.db.run(Users.result)
-    resultingUsers.map(users => Ok(views.html.users(users)))
+    val resultingProducts: Future[Seq[ProductsRow]] = dbConfig.db.run(Products.result)
+    val combined = resultingUsers zip resultingProducts
+    combined.map { case (users, products) => Ok(views.html.users(users, products)) }
   }
 }

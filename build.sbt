@@ -8,7 +8,7 @@ addCommandAlias("mg", "migrations/run")
 addCommandAlias("cc", ";clean;compile")
 
 // workaround for scalafmt in sbt 0.13
-def latestScalafmt = "1.2.0"
+lazy val latestScalafmt = "1.2.0"
 commands += Command.args("scalafmt", "Run scalafmt cli.") {
   case (state, args) =>
     val Right(scalafmt) =
@@ -124,22 +124,23 @@ lazy val slickDeps = Seq(
     //    "com.typesafe.slick" %% "slick-testkit" % Test
   )
 
-lazy val dbDeps = Seq(
-  "org.postgresql" % "postgresql" % "42.1.4",
-  "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
-  ) ++
-  Seq(
+lazy val slickPgDeps = Seq(
     "com.github.tminglei" %% "slick-pg",
     "com.github.tminglei" %% "slick-pg_jts",
     "com.github.tminglei" %% "slick-pg_circe-json"
   ).map(_ % "0.15.3")
+
+lazy val dbDeps = Seq(
+  "org.postgresql" % "postgresql" % "42.1.4",
+  "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
+  )
 
 lazy val forkliftDeps = Seq(
   "com.liyaos" %% "scala-forklift-slick" % forkliftVersion,
   "io.github.nafg" %% "slick-migration-api" % "0.4.1"
 )
 
-lazy val appDependencies = dbDeps ++ loggingDeps ++
+lazy val appDependencies = dbDeps ++ slickPgDeps ++ loggingDeps ++
   Seq( jdbc , ehcache , ws , specs2 % Test , guice ) ++
   Seq(
     "io.circe" %% "circe-core",
@@ -157,17 +158,20 @@ lazy val appDependencies = dbDeps ++ loggingDeps ++
   Seq("com.chuusai" %% "shapeless" % "2.3.2")
 
 lazy val migrationsDependencies =
-  dbDeps ++ forkliftDeps ++ loggingDeps
+  dbDeps ++ slickPgDeps ++ forkliftDeps ++ loggingDeps
 
-lazy val migrationManagerDependencies = dbDeps ++ forkliftDeps
+lazy val migrationManagerDependencies = dbDeps ++ slickPgDeps ++ forkliftDeps
 
 lazy val generatedCodeDependencies = slickDeps
 
+lazy val slickDependencies = dbDeps ++ slickPgDeps
+//lazy val infrastructureDependencies =
 
 
 
 lazy val `scala-play-starter-kit` = (project in file("."))
-  .dependsOn(generatedCode)
+  .dependsOn(generatedCode, slick)
+  .aggregate(slick, generatedCode)
   .settings(commonSettings:_*)
   .settings(playWartRemoverSettings:_*)
   .settings {
@@ -175,6 +179,13 @@ lazy val `scala-play-starter-kit` = (project in file("."))
   }
   .enablePlugins(PlayScala)
   .enablePlugins(DockerPlugin)
+
+lazy val slick = project.in(file("slick"))
+  .settings(commonSettings:_*)
+  .settings(wartremoverSettings:_*)
+  .settings {
+    libraryDependencies ++= slickDependencies
+  }
 
 lazy val migrationManager = project.in(file("migration_manager"))
   .settings(commonSettings:_*)
@@ -184,7 +195,7 @@ lazy val migrationManager = project.in(file("migration_manager"))
   }
 
 lazy val migrations = project.in(file("migrations"))
-  .dependsOn(generatedCode, migrationManager)
+  .dependsOn(generatedCode, migrationManager, slick)
   .settings(commonSettings:_*)
   .settings(wartremoverSettings:_*)
   .settings {
@@ -203,6 +214,7 @@ lazy val tools = Project("git-tools", file("tools/git"))
   }
 
 lazy val generatedCode = project.in(file("generated_code"))
+  .dependsOn(slick)
   .settings(commonSettings:_*)
   .settings {
     libraryDependencies ++= generatedCodeDependencies

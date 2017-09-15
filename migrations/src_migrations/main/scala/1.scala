@@ -1,4 +1,4 @@
-import slick.jdbc.PostgresProfile.api._
+import mySlick.profile.MyPostgresProfile.api._
 import com.liyaos.forklift.slick.SqlMigration
 
 object M1 {

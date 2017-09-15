@@ -1,4 +1,4 @@
-import slick.jdbc.PostgresProfile.api._
+import mySlick.profile.MyPostgresProfile.api._
 import com.liyaos.forklift.slick.DBIOMigration
 import datamodel.v1.schema.tables.Users
 import datamodel.v1.schema.tables.UsersRow

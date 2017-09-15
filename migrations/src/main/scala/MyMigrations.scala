@@ -6,7 +6,7 @@ object MyMigrations
     extends App
     with SlickMigrationCommandLineTool
     with SlickMigrationCommands
-    with SlickMigrationManager
+    with MyMigrationManager
     with Codegen {
   override lazy val dbConfig =
     DatabaseConfig.forConfig[JdbcProfile]("migrations.slick.dbs.default")

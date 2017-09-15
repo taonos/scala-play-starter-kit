@@ -1,6 +1,7 @@
 @import datamodel.latest.schema.tables.UsersRow
+@import datamodel.latest.schema.tables.ProductsRow
 
-@(users: Seq[UsersRow])
+@(users: Seq[UsersRow], products: Seq[ProductsRow])
 
 <!DOCTYPE html>
 
@@ -19,6 +20,16 @@
 
             @for(user <- users) {
                 @display(user)
+            }
+        </ul>
+
+        <ul>
+            @display2(product: ProductsRow) = {
+                <li>@product.name</li>
+            }
+
+            @for(product <- products) {
+                @display2(product)
             }
         </ul>
     </body>
