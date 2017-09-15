@@ -1,4 +1,4 @@
-name := "boilerplate"
+name := "scala-play-starter-kit"
 
 // Add any command aliases that may be useful as shortcuts
 addCommandAlias("mgm", "migration_manager/run")
@@ -166,7 +166,7 @@ lazy val generatedCodeDependencies = slickDeps
 
 
 
-lazy val `boilerplate` = (project in file("."))
+lazy val `scala-play-starter-kit` = (project in file("."))
   .dependsOn(generatedCode)
   .settings(commonSettings:_*)
   .settings(playWartRemoverSettings:_*)

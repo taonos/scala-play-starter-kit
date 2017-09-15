@@ -1,3 +1,17 @@
+# Scala-Play-Boilerplate
+
+
+# Libraries Used
+- Java8
+- Play Framework
+- PostgreSQL
+- Slick and Slick-pg
+- Enumeratum
+- Circe
+- Cats
+- Shapeless
+
+
 # Notes
 
 ## PostgreSQL in Docker
