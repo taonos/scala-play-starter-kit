@@ -13,6 +13,8 @@ trait MyCodegen extends SlickCodegen {
   // override val container = ...
   // override val fileName = ...
 
+  override val container: String = "Tables"
+
   val migrationTableName = "__migrations__"
 
   override def getTables(driver: JdbcProfile): DBIO[Model] =

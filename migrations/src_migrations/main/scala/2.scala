@@ -1,7 +1,7 @@
 import mySlick.profile.MyPostgresProfile.api._
 import com.liyaos.forklift.slick.DBIOMigration
-import datamodel.v1.schema.tables.Users
-import datamodel.v1.schema.tables.UsersRow
+import datamodel.v1.schema.Tables.Users
+import datamodel.v1.schema.Tables.UsersRow
 
 object M2 {
   MyMigrations.migrations = MyMigrations.migrations :+ DBIOMigration( 2 )(

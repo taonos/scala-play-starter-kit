@@ -9,7 +9,7 @@ import slick.jdbc.PostgresProfile.api._
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import datamodel.latest.schema.tables._
+import datamodel.latest.schema.Tables._
 import slick.basic.DatabaseConfig
 
 /**
@@ -36,6 +36,6 @@ class HomeController @Inject()(cc: ControllerComponents,
     val resultingUsers: Future[Seq[UsersRow]] = dbConfig.db.run(Users.result)
     val resultingProducts: Future[Seq[ProductsRow]] = dbConfig.db.run(Products.result)
     val combined = resultingUsers zip resultingProducts
-    combined.map { case (users, products) => Ok(views.html.users(users, products)) }
+    combined.map { case (users, products) => Ok(views.html.demo(users, products)) }
   }
 }
