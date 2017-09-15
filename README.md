@@ -2,13 +2,17 @@
 
 ## PostgreSQL in Docker
 
-Run `docker-compose up -d` to launch a PostgreSQL instance for development.
+Run `docker-compose up -d` to launch a PostgreSQL instance for development. By default the database can be connected to 
+at `localhost:27001`.
 
 ## Database Migration
 
 Database Migration is done using [scala-forklift](https://github.com/lastland/scala-forklift). It allows writing 
 migrations in plain SQL, type-safe Slick queries, and [slick-migration-api](https://github.com/nafg/slick-migration-api).
-This boilerplate comes with example of migrations.
+
+This boilerplate comes with example of migrations. All migration code should be placed in 
+`migrations/src_migrations/main/scala`. When a migration process is run, the aforementioned code will be copied to 
+`migration/src/main/scala/migrations`
 
 ### TODO
 1. Integrate with sbt-docker perhaps??
@@ -40,10 +44,17 @@ At compile time, WartRemover
 
 1. Install docker and docker-compose.
 2. Run `docker-compose up -d` in root directory to launch an instance of PostgreSQL.
-3. Run `sbt mg init` to initialize database migration.
-4. Run `sbt mg migrate` to migrate database.
-5. Once migration is done, run `sbt mg codegen` to generate Slick table classes.
-6. 
+3. Create a file at `migration/src/main/scala/migrations/Summary.scala` with the following content
+```scala
+object MigrationSummary {
+
+}
+```
+4. Run `sbt mg init` to initialize database migration. This will create a table `__migration__` for bookkeeping 
+migration progress.
+5. Run `sbt mg migrate` to migrate database.
+6. Once migration is done, run `sbt mg codegen` to generate Slick table classes.
+7. 
 
 # TODO
 
@@ -53,3 +64,4 @@ At compile time, WartRemover
 4. Dev, test, prod environment.
 5. Test code.
 6. Hikari config.
+7. Figure out a way to no longer require user to create `Summary.scala` file manually after cloning new project.
