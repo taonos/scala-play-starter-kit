@@ -4,13 +4,46 @@
 
 Run `docker-compose up -d` to launch a PostgreSQL instance for development.
 
+## Database Migration
+
+Database Migration is done using [scala-forklift](https://github.com/lastland/scala-forklift). It allows writing 
+migrations in plain SQL, type-safe Slick queries, and [slick-migration-api](https://github.com/nafg/slick-migration-api).
+This boilerplate comes with example of migrations.
+
 ### TODO
 1. Integrate with sbt-docker perhaps??
 
 ## IntelliJ Idea Integration
 [doc](https://playframework.com/documentation/2.6.3/IDE#Navigate-from-an-error-page-to-the-source-code)
 
-Set up Play to add hyperlinks to an error page. This will link to runtime exceptions thrown when Play is running in development mode.
+Set up Play to add hyperlinks to an error page. This will link to runtime exceptions thrown when Play is running in 
+development mode.
+
+## [Coursier](https://github.com/coursier/coursier) Scala artifact fetching
+
+Coursier is a dependency resolver / fetcher for Maven / Ivy. It can download artifacts in parallel.
+
+## [Scala Formatter](https://github.com/scalameta/scalafmt)
+
+A Scala formatter configuration file `.scalafmt.conf` is included in the project. Only git included files are formatted.
+
+The sbt plugin, [neo-sbt-scalafmt](https://github.com/lucidsoftware/neo-sbt-scalafmt) is used to integrate formatter 
+with sbt. For compatibility with `sbt 0.13`, a workaround is used in `build.sbt`.
+
+To format source code manually, run `sbt scalafmt` to format source code.
+
+## [Scala WartRemover](https://github.com/wartremover/wartremover)
+
+At compile time, WartRemover
+
+## How to start?
+
+1. Install docker and docker-compose.
+2. Run `docker-compose up -d` in root directory to launch an instance of PostgreSQL.
+3. Run `sbt mg init` to initialize database migration.
+4. Run `sbt mg migrate` to migrate database.
+5. Once migration is done, run `sbt mg codegen` to generate Slick table classes.
+6. 
 
 # TODO
 
@@ -19,4 +52,4 @@ Set up Play to add hyperlinks to an error page. This will link to runtime except
 3. Update slick-pg's when circe is updated.
 4. Dev, test, prod environment.
 5. Test code.
-
+6. Hikari config.
