@@ -1,7 +1,4 @@
-@import datamodel.latest.schema.Tables.UsersRow
-@import datamodel.latest.schema.Tables.ProductsRow
-
-@(users: Seq[UsersRow], products: Seq[ProductsRow])
+@(users: Seq[User], products: Seq[Product])
 
 <!DOCTYPE html>
 
@@ -14,7 +11,7 @@
     </head>
     <body>
         <ul>
-            @display(user: UsersRow) = {
+            @display(user: User) = {
                 <li>@user.lastname, @user.firstname</li>
             }
 
@@ -24,7 +21,7 @@
         </ul>
 
         <ul>
-            @display2(product: ProductsRow) = {
+            @display2(product: Product) = {
                 <li>@product.name</li>
             }
 

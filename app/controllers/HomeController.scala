@@ -2,26 +2,19 @@ package controllers
 
 import javax.inject._
 
-import play.api.mvc._
-import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api._
+import models.Products
+import models.Users
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import datamodel.latest.schema.Tables._
-import slick.basic.DatabaseConfig
+import play.api.mvc._
 
 /**
   * This controller creates an `Action` to handle HTTP requests to the
   * application's home page.
   */
 @Singleton
-class HomeController @Inject()(cc: ControllerComponents,
-                               dbConfigProvider: DatabaseConfigProvider)
+class HomeController @Inject() (cc: ControllerComponents, users: Users, products: Products)
     extends AbstractController(cc) {
-
-  val dbConfig: DatabaseConfig[JdbcProfile] = dbConfigProvider.get[JdbcProfile]
 
   /**
     * Create an Action to render an HTML page with a welcome message.
@@ -30,12 +23,14 @@ class HomeController @Inject()(cc: ControllerComponents,
     * a path of `/`.
     */
 //  def index = Action {
+////    println(test.haha.dbProvider.ctx)
 //    Ok(views.html.index("Your new application is ready."))
 //  }
+
   def index = Action.async { implicit request =>
-    val resultingUsers: Future[Seq[UsersRow]] = dbConfig.db.run(Users.result)
-    val resultingProducts: Future[Seq[ProductsRow]] = dbConfig.db.run(Products.result)
-    val combined = resultingUsers zip resultingProducts
-    combined.map { case (users, products) => Ok(views.html.demo(users, products)) }
+    val s = users.all zip products.all
+    s.map { r =>
+      Ok(views.html.demo(r._1, r._2))
+    }
   }
 }

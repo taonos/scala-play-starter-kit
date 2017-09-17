@@ -16,3 +16,4 @@ services:
       - DB_USER=play
       - DB_PASS=playplay
       - DB_NAME=play
+      - DB_EXTENSION=moddatetime

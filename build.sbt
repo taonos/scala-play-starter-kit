@@ -63,30 +63,13 @@ lazy val commonSettings = Seq(
       "-Xfatal-warnings"
     )))
 )
-
-lazy val playWartRemoverSettings = Seq(
-  wartremoverWarnings ++= Seq(
-//    PlayWart.AssetsObject,
-    PlayWart.CookiesPartial,
-    PlayWart.FlashPartial,
-    PlayWart.FormPartial,
-    PlayWart.HeadersPartial,
-    PlayWart.JavaApi,
-    PlayWart.JsLookupResultPartial,
-    PlayWart.JsReadablePartial,
-    PlayWart.LangObject,
-//    PlayWart.MessagesObject,
-    PlayWart.SessionPartial,
-    PlayWart.TypedMapPartial,
-    PlayWart.WSResponsePartial
-  ),
-  wartremoverExcluded += baseDirectory.value / "conf" / "routes"
-)
-
 lazy val wartremoverSettings = Seq(
 
   // more at wartremover.org/doc/warts.html
-  wartremoverWarnings ++= Seq(
+  wartremoverWarnings in (Compile, compile) ++= Seq(
+    Wart.ArrayEquals,
+    Wart.Any,
+    Wart.AnyVal,
     Wart.AsInstanceOf, // type conversion hurts typesafety
     Wart.EitherProjectionPartial, // the 'get' method can throw an exception
     Wart.Enumeration, // Scala's enumerations are slow, use ADTs
@@ -95,9 +78,7 @@ lazy val wartremoverSettings = Seq(
     Wart.FinalVal, // final vals cause inconsistency during incremental compilation
     Wart.ImplicitConversion, // implicit conversions are dangerous
     Wart.IsInstanceOf, // pattern matching is safer
-    Wart.JavaConversions, // use java collections explicitly
     Wart.LeakingSealed, // the subclasses of sealed traits must be final to avoid leaking
-    Wart.MutableDataStructures, // mutable data structures in Scala are generally useless
     Wart.Null, // null is unsafe and useless in Scala
     Wart.OptionPartial, // don't use Option's get method, it might throw exceptions
     Wart.Return, // return is spaghetti(and breaks referential transparency)
@@ -107,8 +88,12 @@ lazy val wartremoverSettings = Seq(
     Wart.TryPartial, // Try's get is unsafe
     Wart.Var,
     Wart.While // these are only useful at micro-optimizations, use tail recursion instead
-  )
-//  wartremoverExcluded += baseDirectory.value / "conf" / "routes"
+    // the following options somehow triggers a `NullPointerException` with quill in use during compilation...
+//    Wart.JavaConversions, // use java collections explicitly
+//    Wart.MutableDataStructures, // mutable data structures in Scala are generally useless
+  ),
+  // Exlucde play routes from wartremover
+  wartremoverExcluded ++= routes.in(Compile).value
 )
 
 lazy val forkliftVersion = "0.3.1"
@@ -118,29 +103,13 @@ lazy val loggingDeps = List(
   "org.slf4j" % "slf4j-nop" % "1.6.4" // <- disables logging
 )
 
-
-lazy val slickDeps = Seq(
-    "com.typesafe.slick" %% "slick" % slickVersion
-    //    "com.typesafe.slick" %% "slick-testkit" % Test
-  )
-
-lazy val slickPgDeps = Seq(
-    "com.github.tminglei" %% "slick-pg",
-    "com.github.tminglei" %% "slick-pg_jts",
-    "com.github.tminglei" %% "slick-pg_circe-json"
-  ).map(_ % "0.15.3")
-
-lazy val dbDeps = Seq(
+lazy val quillDeps = Seq(
   "org.postgresql" % "postgresql" % "42.1.4",
-  "com.typesafe.slick" %% "slick-hikaricp" % slickVersion
-  )
-
-lazy val forkliftDeps = Seq(
-  "com.liyaos" %% "scala-forklift-slick" % forkliftVersion,
-  "io.github.nafg" %% "slick-migration-api" % "0.4.1"
+  "io.getquill" %% "quill-async-postgres" % "1.4.0"
 )
 
-lazy val appDependencies = dbDeps ++ slickPgDeps ++ loggingDeps ++
+//lazy val appDependencies = dbDeps ++ slickPgDeps ++ loggingDeps ++
+lazy val appDependencies = loggingDeps ++ quillDeps ++
   Seq( jdbc , ehcache , ws , specs2 % Test , guice ) ++
   Seq(
     "io.circe" %% "circe-core",
@@ -153,72 +122,24 @@ lazy val appDependencies = dbDeps ++ slickPgDeps ++ loggingDeps ++
     "com.beachape" %% "enumeratum" % "1.5.12",
     "com.beachape" %% "enumeratum-circe" % "1.5.14"
   ) ++
-  Seq("com.typesafe.play" %% "play-slick" % "3.0.1") ++
+  Seq("org.flywaydb" %% "flyway-play" % "4.0.0") ++
+//  Seq("com.typesafe.play" %% "play-slick" % "3.0.1") ++
   Seq("org.typelevel" %% "cats-core" % "0.9.0") ++
   Seq("com.chuusai" %% "shapeless" % "2.3.2")
 
-lazy val migrationsDependencies =
-  dbDeps ++ slickPgDeps ++ forkliftDeps ++ loggingDeps
-
-lazy val migrationManagerDependencies = dbDeps ++ slickPgDeps ++ forkliftDeps
-
-lazy val generatedCodeDependencies = slickDeps
-
-lazy val slickDependencies = dbDeps ++ slickPgDeps
-//lazy val infrastructureDependencies =
 
 
 
 lazy val `scala-play-starter-kit` = (project in file("."))
-  .dependsOn(generatedCode, slick)
-  .aggregate(slick, generatedCode)
+//  .dependsOn(generatedCode, slick)
+//  .aggregate(slick, generatedCode)
   .settings(commonSettings:_*)
-  .settings(playWartRemoverSettings:_*)
+  .settings(wartremoverSettings:_*)
   .settings {
     libraryDependencies ++= appDependencies
   }
   .enablePlugins(PlayScala)
   .enablePlugins(DockerPlugin)
-
-lazy val slick = project.in(file("slick"))
-  .settings(commonSettings:_*)
-  .settings(wartremoverSettings:_*)
-  .settings {
-    libraryDependencies ++= slickDependencies
-  }
-
-lazy val migrationManager = project.in(file("migration_manager"))
-  .settings(commonSettings:_*)
-  .settings(wartremoverSettings:_*)
-  .settings {
-    libraryDependencies ++= migrationManagerDependencies
-  }
-
-lazy val migrations = project.in(file("migrations"))
-  .dependsOn(generatedCode, migrationManager, slick)
-  .settings(commonSettings:_*)
-  .settings(wartremoverSettings:_*)
-  .settings {
-    libraryDependencies ++= migrationsDependencies
-  }
-
-lazy val tools = Project("git-tools", file("tools/git"))
-  .settings(commonSettings:_*)
-  .settings(wartremoverSettings:_*)
-  .settings {
-    libraryDependencies ++= forkliftDeps ++ List(
-      "com.liyaos" %% "scala-forklift-git-tools" % forkliftVersion,
-      "com.typesafe" % "config" % "1.3.0",
-      "org.eclipse.jgit" % "org.eclipse.jgit" % "4.0.1.201506240215-r"
-    )
-  }
-
-lazy val generatedCode = project.in(file("generated_code"))
-  .dependsOn(slick)
-  .settings(commonSettings:_*)
-  .settings {
-    libraryDependencies ++= generatedCodeDependencies
-  }
 
 
 //unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )

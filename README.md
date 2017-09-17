@@ -5,7 +5,8 @@
 - Java8
 - Play Framework
 - PostgreSQL
-- Slick and Slick-pg
+- Flyway
+- Quill
 - Enumeratum
 - Circe
 - Cats
@@ -21,12 +22,7 @@ at `localhost:27001`.
 
 ## Database Migration
 
-Database Migration is done using [scala-forklift](https://github.com/lastland/scala-forklift). It allows writing 
-migrations in plain SQL, type-safe Slick queries, and [slick-migration-api](https://github.com/nafg/slick-migration-api).
 
-This boilerplate comes with example of migrations. All migration code should be placed in 
-`migrations/src_migrations/main/scala`. When a migration process is run, the aforementioned code will be copied to 
-`migration/src/main/scala/migrations`
 
 ### TODO
 1. Integrate with sbt-docker perhaps??
