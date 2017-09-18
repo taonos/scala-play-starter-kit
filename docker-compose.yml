@@ -15,5 +15,5 @@ services:
       - DEBUG=false
       - DB_USER=play
       - DB_PASS=playplay
-      - DB_NAME=play
+      - DB_NAME=play_dev
       - DB_EXTENSION=moddatetime

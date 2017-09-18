@@ -1,4 +1,6 @@
-@(users: Seq[User], products: Seq[Product])
+@import DAL.entity._
+
+@(accounts: Seq[AccountEntity], products: Seq[ProductEntity])
 
 <!DOCTYPE html>
 
@@ -11,17 +13,17 @@
     </head>
     <body>
         <ul>
-            @display(user: User) = {
-                <li>@user.lastname, @user.firstname</li>
+            @display(account: AccountEntity) = {
+                <li>@account.lastname, @account.firstname</li>
             }
 
-            @for(user <- users) {
-                @display(user)
+            @for(account <- accounts) {
+                @display(account)
             }
         </ul>
 
         <ul>
-            @display2(product: Product) = {
+            @display2(product: ProductEntity) = {
                 <li>@product.name</li>
             }
 

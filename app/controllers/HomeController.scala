@@ -1,19 +1,16 @@
 package controllers
 
+import DAL.repository._
 import javax.inject._
-
-import models.Products
-import models.Users
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.mvc._
+import monix.execution.Scheduler.Implicits.global
 
 /**
   * This controller creates an `Action` to handle HTTP requests to the
   * application's home page.
   */
 @Singleton
-class HomeController @Inject() (cc: ControllerComponents, users: Users, products: Products)
+class HomeController @Inject() (cc: ControllerComponents, accountRepo: AccountRepository, productRepo: ProductRepository)
     extends AbstractController(cc) {
 
   /**
@@ -23,14 +20,13 @@ class HomeController @Inject() (cc: ControllerComponents, users: Users, products
     * a path of `/`.
     */
 //  def index = Action {
-////    println(test.haha.dbProvider.ctx)
 //    Ok(views.html.index("Your new application is ready."))
 //  }
 
   def index = Action.async { implicit request =>
-    val s = users.all zip products.all
+    val s = accountRepo.all zip productRepo.all
     s.map { r =>
       Ok(views.html.demo(r._1, r._2))
-    }
+    }.runAsync
   }
 }

@@ -1,11 +1,9 @@
 name := "scala-play-starter-kit"
 
 // Add any command aliases that may be useful as shortcuts
-addCommandAlias("mgm", "migration_manager/run")
-
-addCommandAlias("mg", "migrations/run")
-
 addCommandAlias("cc", ";clean;compile")
+
+addCommandAlias("populate", "population/run")
 
 // workaround for scalafmt in sbt 0.13
 lazy val latestScalafmt = "1.2.0"
@@ -63,7 +61,7 @@ lazy val commonSettings = Seq(
       "-Xfatal-warnings"
     )))
 )
-lazy val wartremoverSettings = Seq(
+lazy val commonWartRemoverSettings = Seq(
 
   // more at wartremover.org/doc/warts.html
   wartremoverWarnings in (Compile, compile) ++= Seq(
@@ -91,16 +89,27 @@ lazy val wartremoverSettings = Seq(
     // the following options somehow triggers a `NullPointerException` with quill in use during compilation...
 //    Wart.JavaConversions, // use java collections explicitly
 //    Wart.MutableDataStructures, // mutable data structures in Scala are generally useless
-  ),
-  // Exlucde play routes from wartremover
-  wartremoverExcluded ++= routes.in(Compile).value
+  )
 )
+
+lazy val rootWartRemoverSettings = commonWartRemoverSettings ++
+  Seq(
+    // Exlucde play routes from wartremover
+    wartremoverExcluded ++= routes.in(Compile).value
+  )
+
+lazy val populationWartRemoverSettings = commonWartRemoverSettings
+lazy val dataAccessWartRemoverSettings = commonWartRemoverSettings
 
 lazy val forkliftVersion = "0.3.1"
 lazy val slickVersion = "3.2.1"
 
-lazy val loggingDeps = List(
+lazy val loggingDeps = Seq(
   "org.slf4j" % "slf4j-nop" % "1.6.4" // <- disables logging
+)
+
+lazy val injectDeps = Seq(
+  "javax.inject" % "javax.inject" % "1"
 )
 
 lazy val quillDeps = Seq(
@@ -108,8 +117,15 @@ lazy val quillDeps = Seq(
   "io.getquill" %% "quill-async-postgres" % "1.4.0"
 )
 
-//lazy val appDependencies = dbDeps ++ slickPgDeps ++ loggingDeps ++
-lazy val appDependencies = loggingDeps ++ quillDeps ++
+lazy val monixDeps = Seq(
+  "io.monix" %% "monix-eval" % "2.3.0"
+)
+
+lazy val populationDependencies = loggingDeps ++ quillDeps ++ monixDeps
+
+lazy val dataAccessDependencies = loggingDeps ++ quillDeps ++ injectDeps ++ monixDeps
+
+lazy val appDependencies = loggingDeps ++ quillDeps ++ monixDeps ++
   Seq( jdbc , ehcache , ws , specs2 % Test , guice ) ++
   Seq(
     "io.circe" %% "circe-core",
@@ -117,13 +133,11 @@ lazy val appDependencies = loggingDeps ++ quillDeps ++
     "io.circe" %% "circe-parser",
     "io.circe" %% "circe-optics"
   ).map(_ % "0.8.0") ++
-  //  Seq("play-circe" %% "play-circe" % "2608.4") ++
   Seq(
     "com.beachape" %% "enumeratum" % "1.5.12",
     "com.beachape" %% "enumeratum-circe" % "1.5.14"
   ) ++
   Seq("org.flywaydb" %% "flyway-play" % "4.0.0") ++
-//  Seq("com.typesafe.play" %% "play-slick" % "3.0.1") ++
   Seq("org.typelevel" %% "cats-core" % "0.9.0") ++
   Seq("com.chuusai" %% "shapeless" % "2.3.2")
 
@@ -131,15 +145,31 @@ lazy val appDependencies = loggingDeps ++ quillDeps ++
 
 
 lazy val `scala-play-starter-kit` = (project in file("."))
-//  .dependsOn(generatedCode, slick)
-//  .aggregate(slick, generatedCode)
+  .dependsOn(`data_access`)
+  .aggregate(`data_access`)
   .settings(commonSettings:_*)
-  .settings(wartremoverSettings:_*)
+  .settings(rootWartRemoverSettings:_*)
   .settings {
     libraryDependencies ++= appDependencies
   }
   .enablePlugins(PlayScala)
   .enablePlugins(DockerPlugin)
+
+lazy val population = project.in(file("population"))
+  .dependsOn(`data_access`)
+  .aggregate(`data_access`)
+  .settings(commonSettings:_*)
+  .settings(populationWartRemoverSettings:_*)
+  .settings {
+    libraryDependencies ++= populationDependencies
+  }
+
+lazy val `data_access` = project.in(file("data_access"))
+  .settings(commonSettings:_*)
+  .settings(dataAccessWartRemoverSettings:_*)
+  .settings {
+    libraryDependencies ++= dataAccessDependencies
+  }
 
 
 //unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
