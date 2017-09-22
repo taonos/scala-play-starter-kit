@@ -1,5 +1,10 @@
 package DAL.table
 
-import java.util.UUID
+import DAL.DAO.{PK, TableWithPK}
+import io.getquill.Embedded
 
-final case class OwnershipTable(accountUsername: AccountUsername, productId: UUID) extends Timestamped
+final case class OwnershipId(accountUsername: AccountUsername, productId: ProductId) extends Embedded with PK
+final case class OwnershipTable(id: OwnershipId)
+  extends TableWithPK[OwnershipId] with Timestamped {
+  val pk: OwnershipId = id
+}

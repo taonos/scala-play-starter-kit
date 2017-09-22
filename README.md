@@ -1,7 +1,23 @@
 # Scala-Play-Boilerplate
 
 
-# Libraries Used
+## How to start?
+
+1. Install docker and docker-compose.
+2. Run `docker-compose up -d` in root directory to launch an instance of PostgreSQL.
+3. Create a file at `migration/src/main/scala/migrations/Summary.scala` with the following content
+```scala
+object MigrationSummary {
+
+}
+```
+4. Run `sbt mg init` to initialize database migration. This will create a table `__migration__` for bookkeeping 
+migration progress.
+5. Run `sbt mg migrate` to migrate database.
+6. Once migration is done, run `sbt mg codegen` to generate Slick table classes.
+7. 
+
+## Libraries Used
 - Java8
 - Play Framework
 - PostgreSQL
@@ -13,7 +29,22 @@
 - Shapeless
 
 
-# Notes
+
+## Notes
+### Quill
+```scala
+val pagedQuery = quote { (offset: Int,limit: Int) => 
+  query[Record].drop(offset).take(limit)
+}
+db.run(pagedQuery)(offset, limit)
+```
+
+Another possibility using lift and implicit quotation:
+```scala
+def pagedQuery(offset: Int,limit: Int) = 
+db.run(query[Record].drop(lift(offset)).take(lift(limit)))
+```
+Also, you should avoid explicit typing your quotation with : `Quoted[...]` because it forces the quotation to be dynamic.
 
 ## PostgreSQL in Docker
 
@@ -21,6 +52,15 @@ Run `docker-compose up -d` to launch a PostgreSQL instance for development. By d
 at `localhost:27001`.
 
 ## Database Migration
+
+When the `Play` application is launched, database migration is checked. If migration is not up to the latest version, 
+an error message is displayed on the web page. Click on the `Apply this script` button to perform migration.
+
+Alternatively, a manual migration can be performed via sbt. `sbt migrate`.
+
+## Database Population
+
+Run 
 
 
 
@@ -49,22 +89,6 @@ To format source code manually, run `sbt scalafmt` to format source code.
 ## [Scala WartRemover](https://github.com/wartremover/wartremover)
 
 At compile time, WartRemover
-
-## How to start?
-
-1. Install docker and docker-compose.
-2. Run `docker-compose up -d` in root directory to launch an instance of PostgreSQL.
-3. Create a file at `migration/src/main/scala/migrations/Summary.scala` with the following content
-```scala
-object MigrationSummary {
-
-}
-```
-4. Run `sbt mg init` to initialize database migration. This will create a table `__migration__` for bookkeeping 
-migration progress.
-5. Run `sbt mg migrate` to migrate database.
-6. Once migration is done, run `sbt mg codegen` to generate Slick table classes.
-7. 
 
 # TODO
 

@@ -4,13 +4,14 @@ import DAL.table._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
-import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import java.util.UUID
+
 
 object Main extends App {
 
   val ctx = new DbContext()
+  import ctx._
   val productDAO = new ProductDAO(ctx)
   val accountDAO = new AccountDAO(ctx)
   val ownershipDAO = new OwnershipDAO(ctx)
@@ -32,7 +33,7 @@ object Main extends App {
   val productUUIDs = Seq(
     UUID.fromString("e2c789d0-8216-4258-bfdb-217f4824bc29"),
     UUID.fromString("221199fc-36ce-49bc-a889-c6ce21a4d45e")
-  )
+  ).map(ProductId.apply)
 
   val productDetails = Seq(
     "Computer",
@@ -45,22 +46,14 @@ object Main extends App {
 
   val ownershipEntities = usernames
     .zip(productUUIDs)
-    .map(v => OwnershipTable(v._1, v._2))
+    .map(v => OwnershipTable(OwnershipId(v._1, v._2)))
 
-  val result = for {
-    a <- Task.gatherUnordered(accountEntities.map(accountDAO.insert)).map(_.length)
-    b <- Task.gatherUnordered(productEntities.map(productDAO.insert)).map(_.length)
-    c <- Task.gatherUnordered(ownershipEntities.map(ownershipDAO.insert)).map(_.length)
-  } yield a + b + c
+
+  val result = ctx.transaction_task { implicit ec =>
+    (accountDAO.insertBatch(accountEntities) zip productDAO.insertBatch(productEntities))
+    .flatMap(_ => ownershipDAO.insertBatch(ownershipEntities))
+  }
 
   val inserted = Await.result(result.runAsync, Duration.Inf)
   println(s"Database population inserted with $inserted records.")
-
-//  val result = for {
-//    a <- accountDAO.batchCreate(accountEntities)
-//    b <- productDAO.batchCreate(productEntities)
-//  } yield (a, b)
-//
-//  val inserted = Await.result(result, Duration.Inf)
-//  println(s"Database population inserted with $inserted records.")
 }

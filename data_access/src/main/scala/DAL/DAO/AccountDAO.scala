@@ -3,40 +3,69 @@ package DAL.DAO
 import DAL.DbContext
 import DAL.table.{AccountTable, AccountUsername}
 import javax.inject.{Inject, Singleton}
-
 import monix.eval.Task
 
 @Singleton
-class AccountDAO @Inject()(val ctx: DbContext) extends DAO {
+class AccountDAO @Inject()(val ctx: DbContext) extends DAOCrudWithPk[Task, AccountTable, AccountUsername] {
   import ctx._
 
   private implicit val updateExclusion =
     updateMeta[AccountTable](_.username, _.createdAt)
 
-  private val accountQuery: Quoted[EntityQuery[AccountTable]] = quote(querySchema[AccountTable]("account"))
+  override val table = quote(querySchema[AccountTable]("account"))
 
-  def find(username: AccountUsername): Task[Option[AccountTable]] =
+
+  override def findAll: Task[Seq[AccountTable]] =
     Task.deferFutureAction { implicit scheduler =>
-      run(accountQuery
-        .filter(_.username == lift(username))
+      run(table)
+    }
+
+  override def findByPk(pk: AccountUsername): Task[Option[AccountTable]] =
+    Task.deferFutureAction { implicit scheduler =>
+      run(table
+        .filter(_.username == lift(pk))
       )
     }
       .map(_.headOption)
 
-  def all: Task[List[AccountTable]] =
-    Task.deferFutureAction { implicit scheduler => run(accountQuery) }
+  private val insertQuote = quote { (row: AccountTable) =>
+    table.insert(row)
+  }
 
-  def insert(account: AccountTable): Task[Long] =
+  override def insert(row: AccountTable): Task[AccountTable] =
     Task.deferFutureAction { implicit scheduler =>
       run(
-        accountQuery.insert(lift(account))
+        insertQuote(lift(row))
       )
     }
+      .map(_ => row)
 
-//  def batchCreate(accounts: Seq[AccountTable]): Future[List[Long]] = {
-//    val q = quote {
-//      liftQuery(accounts).foreach(e => accountQuery.insert(e))
+  override def insertBatch(rows: Seq[AccountTable]): Task[Long] =
+    Task.gatherUnordered(rows.map(insert)).map(_.length)
+//    Task.deferFutureAction { implicit scheduler =>
+//      run(quote {
+//        liftQuery(rows).foreach(v => table.insert(v))
+//      })
 //    }
-//    run(q)
-//  }
+//      .map(_.length)
+
+  override def update(row: AccountTable): Task[AccountTable] =
+    Task.deferFutureAction { implicit scheduler =>
+      run(table.update(lift(row)))
+    }
+      .map(_ => row)
+
+  override def updateBatch(rows: Seq[AccountTable]): Task[Long] =
+    Task.deferFutureAction { implicit scheduler =>
+      run(quote {
+        liftQuery(rows).foreach(v => table.update(v))
+      })
+    }
+      .map(_.length)
+
+  override def deleteByPk(pk: AccountUsername): Task[Unit] =
+    Task.deferFutureAction { implicit scheduler =>
+      run(table.filter(_.username == lift(pk)).delete)
+    }
+      .map(_ => ())
 }

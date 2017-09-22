@@ -127,14 +127,22 @@ lazy val quillDeps = Seq(
 )
 
 lazy val monixDeps = Seq(
-  "io.monix" %% "monix-eval" % "2.3.0"
+  "io.monix" %% "monix-eval" % "2.3.0",
+  "io.monix" %% "monix-cats" % "2.3.0"
 )
+
+lazy val catsDeps = Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-parser",
+  "io.circe" %% "circe-optics"
+).map(_ % "0.8.0")
 
 lazy val populationDependencies = loggingDeps ++ quillDeps ++ monixDeps
 
-lazy val dataAccessDependencies = loggingDeps ++ quillDeps ++ injectDeps ++ monixDeps
+lazy val dataAccessDependencies = loggingDeps ++ quillDeps ++ injectDeps ++ monixDeps ++ catsDeps
 
-lazy val appDependencies = loggingDeps ++ quillDeps ++ monixDeps ++
+lazy val appDependencies = loggingDeps ++ quillDeps ++ monixDeps ++ catsDeps ++
   Seq( jdbc , ehcache , ws , specs2 % Test , guice ) ++
   Seq(
     "io.circe" %% "circe-core",
