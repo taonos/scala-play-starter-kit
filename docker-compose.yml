@@ -13,6 +13,7 @@ services:
       - pg-data:/var/lib/postgresql
     environment:
       - DEBUG=false
+      - PG_PASSWORD=postgres
       - DB_USER=play
       - DB_PASS=playplay
       - DB_NAME=play_dev

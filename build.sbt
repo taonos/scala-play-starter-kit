@@ -2,8 +2,15 @@ name := "scala-play-starter-kit"
 
 // Add any command aliases that may be useful as shortcuts
 addCommandAlias("cc", ";clean;compile")
-
 addCommandAlias("populate", "population/run")
+addCommandAlias("cd", "project")
+addCommandAlias("ls", "projects")
+addCommandAlias("cr", ";clean ;reload")
+addCommandAlias("cru", ";clean ;reload ;test:update")
+addCommandAlias("du", "dependencyUpdates")
+addCommandAlias("rdu", ";reload ;dependencyUpdates")
+addCommandAlias("ru", ";reload ;test:update")
+addCommandAlias("tc", "test:compile")
 
 // workaround for scalafmt in sbt 0.13
 lazy val latestScalafmt = "1.2.0"
@@ -20,6 +27,7 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.12.3",
   resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases",
   resolvers += "Akka Snapshot Repository" at "http://repo.akka.io/snapshots/",
+  resolvers += "micronautics/scala on bintray" at "http://dl.bintray.com/micronautics/scala",
   scalacOptions ++= Seq(
 //    "-P:splain:implicits:false",
     "-deprecation", // warn about deprecated code
@@ -113,6 +121,7 @@ lazy val injectDeps = Seq(
 )
 
 lazy val quillDeps = Seq(
+//  "com.micronautics" %% "has-id" % "1.2.8" withSources(),
   "org.postgresql" % "postgresql" % "42.1.4",
   "io.getquill" %% "quill-async-postgres" % "1.4.0"
 )

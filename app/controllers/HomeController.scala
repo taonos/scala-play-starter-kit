@@ -1,6 +1,6 @@
 package controllers
 
-import DAL.repository._
+import DAL.DAO._
 import javax.inject._
 import play.api.mvc._
 import monix.execution.Scheduler.Implicits.global
@@ -10,7 +10,7 @@ import monix.execution.Scheduler.Implicits.global
   * application's home page.
   */
 @Singleton
-class HomeController @Inject() (cc: ControllerComponents, accountRepo: AccountRepository, productRepo: ProductRepository)
+class HomeController @Inject() (cc: ControllerComponents, accountRepo: AccountDAO, productRepo: ProductDAO)
     extends AbstractController(cc) {
 
   /**

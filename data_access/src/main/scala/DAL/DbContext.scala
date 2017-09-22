@@ -1,8 +1,7 @@
 package DAL
 
-import javax.inject.{Singleton, Inject}
-
-import io.getquill.{Literal, PostgresAsyncContext}
+import javax.inject.{Inject, Singleton}
+import io.getquill.{PostgresAsyncContext, SnakeCase}
 
 @Singleton
-class DbContext @Inject() () extends PostgresAsyncContext[Literal]("db.default")
+class DbContext @Inject() () extends PostgresAsyncContext[SnakeCase]("db.default")
