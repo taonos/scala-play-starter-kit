@@ -16,9 +16,7 @@ trait DbContextable {
   val ctx: DbContext
 }
 
-trait PK {
-
-}
+trait PK {}
 
 trait TableWithPK[C <: PK] extends DAL.table.Table {
   val pk: C
@@ -43,7 +41,6 @@ trait DAOCrud[M[_], TB <: DAL.table.Table] extends DAO with DbContextable {
 
 //  def upsert(row: TB): Task[TB]
 
-
 }
 
 trait DAOCrudWithPk[M[_], TK <: TableWithPK[C], C <: PK] extends DAOCrud[M, TK] {
@@ -57,7 +54,8 @@ trait DAOCrudWithPk[M[_], TK <: TableWithPK[C], C <: PK] extends DAOCrud[M, TK] 
 }
 
 @Singleton
-class OwnershipDAO @Inject()(val ctx: DbContext) extends DAOCrudWithPk[Task, OwnershipTable, OwnershipId] {
+class OwnershipDAO @Inject()(val ctx: DbContext)
+    extends DAOCrudWithPk[Task, OwnershipTable, OwnershipId] {
   import ctx._
 
   private implicit val updateExclusion =
@@ -71,18 +69,22 @@ class OwnershipDAO @Inject()(val ctx: DbContext) extends DAOCrudWithPk[Task, Own
     }
 
   override def findByPk(pk: OwnershipId): Task[Option[OwnershipTable]] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table
-          .filter(v => v.id.accountUsername == lift(pk.accountUsername) && v.id.productId == lift(pk.productId))
-      )
-    }
+    Task
+      .deferFutureAction { implicit scheduler =>
+        run(
+          table
+            .filter(v =>
+              v.id.accountUsername == lift(pk.accountUsername) && v.id.productId == lift(
+                pk.productId)))
+      }
       .map(_.headOption)
 
   override def insert(row: OwnershipTable): Task[OwnershipTable] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table.insert(lift(row)))
-    }
-    .map(_ => row)
+    Task
+      .deferFutureAction { implicit scheduler =>
+        run(table.insert(lift(row)))
+      }
+      .map(_ => row)
 
   override def insertBatch(rows: Seq[OwnershipTable]): Task[Long] =
     Task.gatherUnordered(rows.map(insert)).map(_.length)
@@ -94,23 +96,31 @@ class OwnershipDAO @Inject()(val ctx: DbContext) extends DAOCrudWithPk[Task, Own
 //      .map(_.length)
 
   override def update(row: OwnershipTable): Task[OwnershipTable] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table.update(lift(row)))
-    }
-    .map(_ => row)
+    Task
+      .deferFutureAction { implicit scheduler =>
+        run(table.update(lift(row)))
+      }
+      .map(_ => row)
 
   override def updateBatch(rows: Seq[OwnershipTable]): Task[Long] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(quote {
-        liftQuery(rows).foreach(v => table.update(v))
-      })
-    }
+    Task
+      .deferFutureAction { implicit scheduler =>
+        run(quote {
+          liftQuery(rows).foreach(v => table.update(v))
+        })
+      }
       .map(_.length)
 
   override def deleteByPk(pk: OwnershipId): Task[Unit] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table.filter(v => v.id.accountUsername == lift(pk.accountUsername) && v.id.productId == lift(pk.productId)).delete)
-    }
+    Task
+      .deferFutureAction { implicit scheduler =>
+        run(
+          table
+            .filter(v =>
+              v.id.accountUsername == lift(pk.accountUsername) && v.id.productId == lift(
+                pk.productId))
+            .delete)
+      }
       .map(_ => ())
 }
 
@@ -124,9 +134,6 @@ case class AccountEntity()
 //}
 
 @Singleton
-class OwnershipRepository @Inject() (val ownershipDAO: OwnershipDAO) {
-
-}
+class OwnershipRepository @Inject()(val ownershipDAO: OwnershipDAO) {}
 
 //case class Account
-

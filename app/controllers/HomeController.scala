@@ -10,7 +10,9 @@ import monix.execution.Scheduler.Implicits.global
   * application's home page.
   */
 @Singleton
-class HomeController @Inject() (cc: ControllerComponents, accountRepo: AccountDAO, productRepo: ProductDAO)
+class HomeController @Inject()(cc: ControllerComponents,
+                               accountRepo: AccountDAO,
+                               productRepo: ProductDAO)
     extends AbstractController(cc) {
 
   /**
@@ -24,7 +26,7 @@ class HomeController @Inject() (cc: ControllerComponents, accountRepo: AccountDA
 //  }
 
   def index = Action.async { implicit request =>
-    val s = accountRepo.all zip productRepo.all
+    val s = accountRepo.findAll zip productRepo.findAll
     s.map { r =>
       Ok(views.html.demo(r._1, r._2))
     }.runAsync

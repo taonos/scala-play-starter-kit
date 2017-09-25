@@ -3,6 +3,8 @@ name := "scala-play-starter-kit"
 // Add any command aliases that may be useful as shortcuts
 addCommandAlias("cc", ";clean;compile")
 addCommandAlias("populate", "population/run")
+addCommandAlias("db_migrate", "migration/flywayMigrate")
+addCommandAlias("db_clean", "migration/flywayClean")
 addCommandAlias("cd", "project")
 addCommandAlias("ls", "projects")
 addCommandAlias("cr", ";clean ;reload")
@@ -52,7 +54,7 @@ lazy val commonSettings = Seq(
     "-Xlint:unsound-match", // the used pattern matching is unsafe
     "-Ywarn-dead-code", // warn about unused code
     "-Ywarn-extra-implicit", // there should be a max of 1 implicit parameter for each definition
-    "-Ywarn-inaccessible", // warn about inaccessible types in method signatures
+    "-Ywarn-inaccessible",   // warn about inaccessible types in method signatures
 //    "-Ywarn-unused:imports", // warn about unused imports
 //    "-Ywarn-unused:locals", // warn about unused local variables
 //    "-Ywarn-unused:params", // warn about unused parameters
@@ -69,12 +71,12 @@ lazy val commonSettings = Seq(
       "-Xfatal-warnings"
     )))
 )
-lazy val commonWartRemoverSettings = Seq(
 
+lazy val commonWartRemoverSettings = Seq(
   // more at wartremover.org/doc/warts.html
   wartremoverWarnings in (Compile, compile) ++= Seq(
     Wart.ArrayEquals,
-    Wart.Any,
+//    Wart.Any,
     Wart.AnyVal,
     Wart.AsInstanceOf, // type conversion hurts typesafety
     Wart.EitherProjectionPartial, // the 'get' method can throw an exception
@@ -110,7 +112,7 @@ lazy val populationWartRemoverSettings = commonWartRemoverSettings
 lazy val dataAccessWartRemoverSettings = commonWartRemoverSettings
 
 lazy val forkliftVersion = "0.3.1"
-lazy val slickVersion = "3.2.1"
+lazy val slickVersion    = "3.2.1"
 
 lazy val loggingDeps = Seq(
   "org.slf4j" % "slf4j-nop" % "1.6.4" // <- disables logging
@@ -120,9 +122,10 @@ lazy val injectDeps = Seq(
   "javax.inject" % "javax.inject" % "1"
 )
 
+lazy val postgresqlDeps = Seq("org.postgresql" % "postgresql" % "42.1.4")
+
 lazy val quillDeps = Seq(
 //  "com.micronautics" %% "has-id" % "1.2.8" withSources(),
-  "org.postgresql" % "postgresql" % "42.1.4",
   "io.getquill" %% "quill-async-postgres" % "1.4.0"
 )
 
@@ -138,12 +141,18 @@ lazy val catsDeps = Seq(
   "io.circe" %% "circe-optics"
 ).map(_ % "0.8.0")
 
-lazy val populationDependencies = loggingDeps ++ quillDeps ++ monixDeps
+lazy val flywayDeps = Seq(
+  "org.flywaydb" % "flyway-core" % "4.2.0"
+)
 
-lazy val dataAccessDependencies = loggingDeps ++ quillDeps ++ injectDeps ++ monixDeps ++ catsDeps
+lazy val populationDependencies = loggingDeps ++ postgresqlDeps ++ quillDeps ++ monixDeps
 
-lazy val appDependencies = loggingDeps ++ quillDeps ++ monixDeps ++ catsDeps ++
-  Seq( jdbc , ehcache , ws , specs2 % Test , guice ) ++
+lazy val dataAccessDependencies = loggingDeps ++ postgresqlDeps ++ quillDeps ++ injectDeps ++ monixDeps ++ catsDeps
+
+lazy val migrationDependencies = postgresqlDeps ++ flywayDeps
+
+lazy val appDependencies = loggingDeps ++ postgresqlDeps ++ quillDeps ++ monixDeps ++ catsDeps ++
+  Seq(jdbc, ehcache, ws, specs2 % Test, guice) ++
   Seq(
     "io.circe" %% "circe-core",
     "io.circe" %% "circe-generic",
@@ -151,44 +160,61 @@ lazy val appDependencies = loggingDeps ++ quillDeps ++ monixDeps ++ catsDeps ++
     "io.circe" %% "circe-optics"
   ).map(_ % "0.8.0") ++
   Seq(
-    "com.beachape" %% "enumeratum" % "1.5.12",
+    "com.beachape" %% "enumeratum"       % "1.5.12",
     "com.beachape" %% "enumeratum-circe" % "1.5.14"
   ) ++
-  Seq("org.flywaydb" %% "flyway-play" % "4.0.0") ++
-  Seq("org.typelevel" %% "cats-core" % "0.9.0") ++
-  Seq("com.chuusai" %% "shapeless" % "2.3.2")
+  Seq("org.flywaydb"  %% "flyway-play" % "4.0.0") ++
+  Seq("org.typelevel" %% "cats-core"   % "0.9.0") ++
+  Seq("com.chuusai"   %% "shapeless"   % "2.3.2")
 
-
-
+import org.flywaydb.sbt.FlywayPlugin._
+lazy val conf =
+  com.typesafe.config.ConfigFactory.parseFile(new File("conf/application.conf")).resolve()
+lazy val flywaySettings = Seq(
+  flywayUrl := conf.getString("db.default.url"),
+  flywayUser := conf.getString("db.default.user"),
+  flywayPassword := conf.getString("db.default.password"),
+  flywayLocations := Seq("filesystem:conf/db/migration"),
+  flywayValidateOnMigrate := true
+//  flywayLocations := Seq("classpath:db/migration")
+)
 
 lazy val `scala-play-starter-kit` = (project in file("."))
   .dependsOn(`data_access`)
   .aggregate(`data_access`)
-  .settings(commonSettings:_*)
-  .settings(rootWartRemoverSettings:_*)
+  .settings(commonSettings: _*)
+  .settings(rootWartRemoverSettings: _*)
   .settings {
     libraryDependencies ++= appDependencies
   }
   .enablePlugins(PlayScala)
   .enablePlugins(DockerPlugin)
 
-lazy val population = project.in(file("population"))
+lazy val migration = project
+  .in(file("migration"))
+  .settings(commonSettings: _*)
+  .settings(commonWartRemoverSettings: _*)
+  .settings(flywaySettings: _*)
+  .settings {
+    libraryDependencies ++= migrationDependencies
+  }
+  .enablePlugins(FlywayPlugin)
+
+lazy val population = project
+  .in(file("population"))
   .dependsOn(`data_access`)
   .aggregate(`data_access`)
-  .settings(commonSettings:_*)
-  .settings(populationWartRemoverSettings:_*)
+  .settings(commonSettings: _*)
+  .settings(populationWartRemoverSettings: _*)
   .settings {
     libraryDependencies ++= populationDependencies
   }
 
-lazy val `data_access` = project.in(file("data_access"))
-  .settings(commonSettings:_*)
-  .settings(dataAccessWartRemoverSettings:_*)
+lazy val `data_access` = project
+  .in(file("data_access"))
+  .settings(commonSettings: _*)
+  .settings(dataAccessWartRemoverSettings: _*)
   .settings {
     libraryDependencies ++= dataAccessDependencies
   }
-
-
 //unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
-
-      

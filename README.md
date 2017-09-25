@@ -5,17 +5,10 @@
 
 1. Install docker and docker-compose.
 2. Run `docker-compose up -d` in root directory to launch an instance of PostgreSQL.
-3. Create a file at `migration/src/main/scala/migrations/Summary.scala` with the following content
-```scala
-object MigrationSummary {
-
-}
-```
-4. Run `sbt mg init` to initialize database migration. This will create a table `__migration__` for bookkeeping 
-migration progress.
-5. Run `sbt mg migrate` to migrate database.
-6. Once migration is done, run `sbt mg codegen` to generate Slick table classes.
-7. 
+3. Run `sbt db_migrate` to set up schema in PostgreSQL.
+4. (Optional) Run `sbt populate` to populate database in development environment with fixtures.
+5. Run `sbt run` to start the `Play` application.
+ 
 
 ## Libraries Used
 - Java8
@@ -56,13 +49,11 @@ at `localhost:27001`.
 When the `Play` application is launched, database migration is checked. If migration is not up to the latest version, 
 an error message is displayed on the web page. Click on the `Apply this script` button to perform migration.
 
-Alternatively, a manual migration can be performed via sbt. `sbt migrate`.
+Alternatively, a manual migration can be performed via sbt. `sbt db_migrate`.
 
 ## Database Population
 
-Run 
-
-
+Run `sbt populate` to populate database in development environment with fixtures.
 
 ### TODO
 1. Integrate with sbt-docker perhaps??

@@ -3,8 +3,12 @@ package DAL.table
 import DAL.DAO.{PK, TableWithPK}
 
 final case class AccountUsername(value: String) extends PK
-final case class AccountTable(username: AccountUsername, email: String, firstname: String, lastname: String)
-  extends TableWithPK[AccountUsername] with Timestamped {
+final case class AccountTable(username: AccountUsername,
+                              email: String,
+                              firstname: String,
+                              lastname: String)
+    extends TableWithPK[AccountUsername]
+    with Timestamped {
 
   val pk: AccountUsername = username
 }

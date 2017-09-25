@@ -5,7 +5,9 @@ import java.util.UUID
 import DAL.DAO.{PK, TableWithPK}
 
 final case class ProductId(value: UUID) extends PK
-final case class ProductTable(id: ProductId, name: String) extends TableWithPK[ProductId] with Timestamped {
+final case class ProductTable(id: ProductId, name: String)
+    extends TableWithPK[ProductId]
+    with Timestamped {
   val pk: ProductId = id
 }
 
