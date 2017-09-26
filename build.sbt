@@ -1,3 +1,5 @@
+import Dependencies.Library._
+
 name := "scala-play-starter-kit"
 
 // Add any command aliases that may be useful as shortcuts
@@ -111,64 +113,23 @@ lazy val rootWartRemoverSettings = commonWartRemoverSettings ++
 lazy val populationWartRemoverSettings = commonWartRemoverSettings
 lazy val dataAccessWartRemoverSettings = commonWartRemoverSettings
 
-lazy val forkliftVersion = "0.3.1"
-lazy val slickVersion    = "3.2.1"
+lazy val populationDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql) ++ Monix.toSeq
 
-lazy val injectDeps = Seq(
-  "javax.inject" % "javax.inject" % "1"
-)
+lazy val dataAccessDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql, JavaxInject.inject) ++ Monix.toSeq
 
-lazy val postgresqlDeps = Seq("org.postgresql" % "postgresql" % "42.1.4")
+lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
 
-lazy val quillDeps = Seq(
-//  "com.micronautics" %% "has-id" % "1.2.8" withSources(),
-  "io.getquill" %% "quill-async-postgres" % "1.4.0"
-)
-
-lazy val monixDeps = Seq(
-  "io.monix" %% "monix-eval" % "2.3.0",
-  "io.monix" %% "monix-cats" % "2.3.0"
-)
-
-lazy val catsDeps = Seq(
-  "io.circe" %% "circe-core",
-  "io.circe" %% "circe-generic",
-  "io.circe" %% "circe-parser",
-  "io.circe" %% "circe-optics"
-).map(_ % "0.8.0")
-
-lazy val flywayDeps = Seq(
-  "org.flywaydb" % "flyway-core" % "4.2.0"
-)
-
-lazy val populationDependencies = postgresqlDeps ++ quillDeps ++ monixDeps
-
-lazy val dataAccessDependencies = postgresqlDeps ++ quillDeps ++ injectDeps ++ monixDeps ++ catsDeps
-
-lazy val migrationDependencies = postgresqlDeps ++ flywayDeps
-
-lazy val appDependencies = postgresqlDeps ++ quillDeps ++ monixDeps ++ catsDeps ++
-  Seq(jdbc, ehcache, ws, specs2 % Test, guice) ++
-  Seq(
-    "com.mohiva" %% "play-silhouette" % "5.0.0",
-    "com.mohiva" %% "play-silhouette-password-bcrypt" % "5.0.0",
-    "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
-    "com.mohiva" %% "play-silhouette-persistence" % "5.0.0",
-    "com.mohiva" %% "play-silhouette-testkit" % "5.0.0" % "test"
-  ) ++
-  Seq(
-    "io.circe" %% "circe-core",
-    "io.circe" %% "circe-generic",
-    "io.circe" %% "circe-parser",
-    "io.circe" %% "circe-optics"
-  ).map(_ % "0.8.0") ++
-  Seq(
-    "com.beachape" %% "enumeratum"       % "1.5.12",
-    "com.beachape" %% "enumeratum-circe" % "1.5.14"
-  ) ++
-  Seq("org.flywaydb"  %% "flyway-play" % "4.0.0") ++
-  Seq("org.typelevel" %% "cats-core"   % "0.9.0") ++
-  Seq("com.chuusai"   %% "shapeless"   % "2.3.2")
+lazy val appDependencies = Seq(
+  jdbc, ehcache, ws, specs2 % Test, guice,
+  PostgreSQL.db,
+  Quill.asyncpostgresql,
+  FlywayDB.play,
+  Cats.core,
+  Shapeless.core) ++
+  Monix.toSeq ++
+  Silhouette.toSeq ++
+  Circe.toSeq ++
+  Enumeratum.toSeq
 
 import org.flywaydb.sbt.FlywayPlugin._
 lazy val conf =
