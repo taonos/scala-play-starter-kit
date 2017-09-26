@@ -23,7 +23,7 @@ addSbtPlugin("org.duhemm" % "sbt-errors-summary" % "0.6.0")
 //addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0-RC12")
 
 // if you use coursier, you must use sbt-scalafmt-coursier
-//addSbtPlugin("com.lucidchart" % "sbt-scalafmt-coursier" % "1.12")
+addSbtPlugin("com.lucidchart" % "sbt-scalafmt" % "1.12")
 
 // project/plugins.sbt
 libraryDependencies += "com.geirsson" %% "scalafmt-bootstrap" % "0.6.6"

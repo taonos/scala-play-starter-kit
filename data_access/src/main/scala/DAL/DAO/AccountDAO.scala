@@ -1,17 +1,17 @@
 package DAL.DAO
 
 import DAL.DbContext
-import DAL.table.{AccountTable, AccountUsername}
+import DAL.table.{AccountTable, AccountId}
 import javax.inject.{Inject, Singleton}
 import monix.eval.Task
 
 @Singleton
 class AccountDAO @Inject()(val ctx: DbContext)
-    extends DAOCrudWithPk[Task, AccountTable, AccountUsername] {
+    extends DAOCrudWithPk[Task, AccountTable, AccountId] {
   import ctx._
 
   private implicit val updateExclusion =
-    updateMeta[AccountTable](_.username, _.createdAt)
+    updateMeta[AccountTable](_.id, _.createdAt)
 
   override val table = quote(querySchema[AccountTable]("account"))
 
@@ -20,12 +20,12 @@ class AccountDAO @Inject()(val ctx: DbContext)
       run(table)
     }
 
-  override def findByPk(pk: AccountUsername): Task[Option[AccountTable]] =
+  override def findByPk(pk: AccountId): Task[Option[AccountTable]] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(
           table
-            .filter(_.username == lift(pk)))
+            .filter(_.id == lift(pk)))
       }
       .map(_.headOption)
 
@@ -67,10 +67,10 @@ class AccountDAO @Inject()(val ctx: DbContext)
       }
       .map(_.length)
 
-  override def deleteByPk(pk: AccountUsername): Task[Unit] =
+  override def deleteByPk(pk: AccountId): Task[Unit] =
     Task
       .deferFutureAction { implicit scheduler =>
-        run(table.filter(_.username == lift(pk)).delete)
+        run(table.filter(_.id == lift(pk)).delete)
       }
       .map(_ => ())
 }

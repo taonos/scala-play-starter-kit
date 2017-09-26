@@ -1,11 +1,13 @@
 create table account (
+  id UUID NOT NULL,
   username VARCHAR(100) NOT NULL,
   email VARCHAR NOT NULL,
   firstname VARCHAR NOT NULL,
   lastname VARCHAR NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
-  PRIMARY KEY (username),
+  PRIMARY KEY (id),
+  CONSTRAINT unique_username UNIQUE (username),
   CONSTRAINT unique_email UNIQUE (email)
 );
 

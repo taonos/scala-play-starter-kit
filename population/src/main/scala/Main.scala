@@ -16,19 +16,19 @@ object Main extends App {
   val accountDAO = new AccountDAO(ctx)
   val ownershipDAO = new OwnershipDAO(ctx)
 
-  val usernames = Seq(
-    AccountUsername("peter123"),
-    AccountUsername("wootwoot")
+  val accountId = Seq(
+    AccountId(UUID.fromString("36e79363-9c93-46f3-8de2-985d3b0d8a41")),
+    AccountId(UUID.fromString("4454de99-dffa-4a68-a474-4fd3326dabd2"))
   )
 
   val userDetails = Seq(
-    ("123@hotmail.com", "Peter", "Quill"),
-    ("345@hotmail", "Mike", "Json")
+    (AccountUsername("peter123"), "123@hotmail.com", "Peter", "Quill"),
+    (AccountUsername("wootwoot"), "345@hotmail", "Mike", "Json")
   )
 
-  val accountEntities = usernames
+  val accountEntities = accountId
     .zip(userDetails)
-    .map { case (username, (email, firstname, lastname)) => AccountTable(username, email, firstname, lastname)}
+    .map { case (id, (username, email, firstname, lastname)) => AccountTable(id, username, email, firstname, lastname)}
 
   val productUUIDs = Seq(
     UUID.fromString("e2c789d0-8216-4258-bfdb-217f4824bc29"),
@@ -44,7 +44,7 @@ object Main extends App {
     .zip(productDetails)
     .map(v => ProductTable(v._1, v._2))
 
-  val ownershipEntities = usernames
+  val ownershipEntities = accountId
     .zip(productUUIDs)
     .map(v => OwnershipTable(OwnershipId(v._1, v._2)))
 

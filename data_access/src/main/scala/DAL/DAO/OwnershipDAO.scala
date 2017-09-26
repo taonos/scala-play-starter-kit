@@ -74,7 +74,7 @@ class OwnershipDAO @Inject()(val ctx: DbContext)
         run(
           table
             .filter(v =>
-              v.id.accountUsername == lift(pk.accountUsername) && v.id.productId == lift(
+              v.id.accountId == lift(pk.accountId) && v.id.productId == lift(
                 pk.productId)))
       }
       .map(_.headOption)
@@ -117,7 +117,7 @@ class OwnershipDAO @Inject()(val ctx: DbContext)
         run(
           table
             .filter(v =>
-              v.id.accountUsername == lift(pk.accountUsername) && v.id.productId == lift(
+              v.id.accountId == lift(pk.accountId) && v.id.productId == lift(
                 pk.productId))
             .delete)
       }

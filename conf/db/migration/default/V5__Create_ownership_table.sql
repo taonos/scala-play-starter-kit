@@ -1,12 +1,12 @@
 CREATE TABLE ownership
 (
-  account_username VARCHAR(100) NOT NULL,
+  account_id UUID NOT NULL,
   product_id UUID NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
-  PRIMARY KEY (account_username, product_id),
-  CONSTRAINT fk_ownership__Users FOREIGN KEY (account_username)
-    REFERENCES account (username) MATCH SIMPLE
+  PRIMARY KEY (account_id, product_id),
+  CONSTRAINT fk_ownership__Users FOREIGN KEY (account_id)
+    REFERENCES account (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE RESTRICT,
   CONSTRAINT fk_ownership__Products FOREIGN KEY (product_id)

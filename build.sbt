@@ -114,10 +114,6 @@ lazy val dataAccessWartRemoverSettings = commonWartRemoverSettings
 lazy val forkliftVersion = "0.3.1"
 lazy val slickVersion    = "3.2.1"
 
-lazy val loggingDeps = Seq(
-  "org.slf4j" % "slf4j-nop" % "1.6.4" // <- disables logging
-)
-
 lazy val injectDeps = Seq(
   "javax.inject" % "javax.inject" % "1"
 )
@@ -145,14 +141,21 @@ lazy val flywayDeps = Seq(
   "org.flywaydb" % "flyway-core" % "4.2.0"
 )
 
-lazy val populationDependencies = loggingDeps ++ postgresqlDeps ++ quillDeps ++ monixDeps
+lazy val populationDependencies = postgresqlDeps ++ quillDeps ++ monixDeps
 
-lazy val dataAccessDependencies = loggingDeps ++ postgresqlDeps ++ quillDeps ++ injectDeps ++ monixDeps ++ catsDeps
+lazy val dataAccessDependencies = postgresqlDeps ++ quillDeps ++ injectDeps ++ monixDeps ++ catsDeps
 
 lazy val migrationDependencies = postgresqlDeps ++ flywayDeps
 
-lazy val appDependencies = loggingDeps ++ postgresqlDeps ++ quillDeps ++ monixDeps ++ catsDeps ++
+lazy val appDependencies = postgresqlDeps ++ quillDeps ++ monixDeps ++ catsDeps ++
   Seq(jdbc, ehcache, ws, specs2 % Test, guice) ++
+  Seq(
+    "com.mohiva" %% "play-silhouette" % "5.0.0",
+    "com.mohiva" %% "play-silhouette-password-bcrypt" % "5.0.0",
+    "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
+    "com.mohiva" %% "play-silhouette-persistence" % "5.0.0",
+    "com.mohiva" %% "play-silhouette-testkit" % "5.0.0" % "test"
+  ) ++
   Seq(
     "io.circe" %% "circe-core",
     "io.circe" %% "circe-generic",
@@ -169,7 +172,7 @@ lazy val appDependencies = loggingDeps ++ postgresqlDeps ++ quillDeps ++ monixDe
 
 import org.flywaydb.sbt.FlywayPlugin._
 lazy val conf =
-  com.typesafe.config.ConfigFactory.parseFile(new File("conf/application.conf")).resolve()
+  com.typesafe.config.ConfigFactory.parseFile(new File("configuration/src/main/resources/db.conf")).resolve()
 lazy val flywaySettings = Seq(
   flywayUrl := conf.getString("db.default.url"),
   flywayUser := conf.getString("db.default.user"),
@@ -192,7 +195,6 @@ lazy val `scala-play-starter-kit` = (project in file("."))
 
 lazy val configuration = (project in file("configuration"))
   .settings(commonSettings: _*)
-  .settings(commonWartRemoverSettings: _*)
 
 
 lazy val migration = (project in file("migration"))
