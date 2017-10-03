@@ -13,6 +13,7 @@
 ## Libraries Used
 - Java8
 - Play Framework
+- Silhouette
 - PostgreSQL
 - Flyway
 - Quill
@@ -20,6 +21,7 @@
 - Circe
 - Cats
 - Shapeless
+- PureConfig
 
 
 

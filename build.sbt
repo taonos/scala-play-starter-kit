@@ -115,25 +115,37 @@ lazy val dataAccessWartRemoverSettings = commonWartRemoverSettings
 
 lazy val populationDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql) ++ Monix.toSeq
 
-lazy val dataAccessDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql, JavaxInject.inject) ++ Monix.toSeq
+lazy val dataAccessDependencies = Seq(PostgreSQL.db,
+                                      Quill.asyncpostgresql,
+                                      JavaxInject.inject,
+                                      Shapeless.core,
+                                      JodaTime.core) ++ Monix.toSeq ++ Silhouette.toSeq
 
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
 
-lazy val appDependencies = Seq(
-  jdbc, ehcache, ws, specs2 % Test, guice,
-  PostgreSQL.db,
-  Quill.asyncpostgresql,
-  FlywayDB.play,
-  Cats.core,
-  Shapeless.core) ++
+lazy val appDependencies = Seq(jdbc,
+                               ehcache,
+                               ws,
+                               specs2 % Test,
+                               guice,
+                               PostgreSQL.db,
+                               Quill.asyncpostgresql,
+                               FlywayDB.play,
+                               Cats.core,
+                               Shapeless.core,
+                               Bootstrap.core,
+                               PureConfig.core) ++
   Monix.toSeq ++
   Silhouette.toSeq ++
   Circe.toSeq ++
-  Enumeratum.toSeq
+  Enumeratum.toSeq ++
+  WebJars.toSeq
 
 import org.flywaydb.sbt.FlywayPlugin._
 lazy val conf =
-  com.typesafe.config.ConfigFactory.parseFile(new File("configuration/src/main/resources/db.conf")).resolve()
+  com.typesafe.config.ConfigFactory
+    .parseFile(new File("configuration/src/main/resources/db.conf"))
+    .resolve()
 lazy val flywaySettings = Seq(
   flywayUrl := conf.getString("db.default.url"),
   flywayUser := conf.getString("db.default.user"),
@@ -156,7 +168,6 @@ lazy val `scala-play-starter-kit` = (project in file("."))
 
 lazy val configuration = (project in file("configuration"))
   .settings(commonSettings: _*)
-
 
 lazy val migration = (project in file("migration"))
   .dependsOn(configuration)

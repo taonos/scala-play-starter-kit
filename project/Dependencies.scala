@@ -77,5 +77,27 @@ object Dependencies {
     object Quill {
       val asyncpostgresql: ModuleID = "io.getquill" %% "quill-async-postgres" % "1.4.0"
     }
+
+    object WebJars extends Entirety {
+
+      val play: ModuleID = "org.webjars" %% "webjars-play" % "2.6.1"
+      val bootstrap: ModuleID = "org.webjars" % "bootstrap" % "3.3.7-1" exclude("org.webjars", "jquery")
+      val jquery: ModuleID = "org.webjars" % "jquery" % "3.2.1"
+
+      override val toSeq: Seq[ModuleID] = Seq(play, bootstrap, jquery)
+    }
+
+    object Bootstrap {
+
+      val core: ModuleID = "com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3"
+    }
+
+    object PureConfig {
+      val core: ModuleID = "com.github.pureconfig" %% "pureconfig" % "0.8.0"
+    }
+
+    object JodaTime {
+      val core: ModuleID = "joda-time" % "joda-time" % "2.9.9"
+    }
   }
 }

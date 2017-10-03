@@ -33,6 +33,12 @@ class AccountDAO @Inject()(val ctx: DbContext)
     table.insert(row)
   }
 
+  def findBy(providerId: String, providerKey: String): Task[Option[AccountTable]] =
+    Task.deferFutureAction { implicit scheduler =>
+      run(table.filter(v => v.providerId == lift(providerId) && v.providerKey == lift(providerKey)))
+    }
+    .map(_.headOption)
+
   override def insert(row: AccountTable): Task[AccountTable] =
     Task
       .deferFutureAction { implicit scheduler =>

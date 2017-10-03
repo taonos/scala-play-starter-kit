@@ -1,4 +1,4 @@
-@(message: String, style: String = "scala") 
+@(message: String, style: String = "scala")
 
 @defining(play.core.PlayVersion.current) { version =>
 
@@ -71,9 +71,9 @@ GET     /               controllers.HomeController.index</code></pre>
 
     Now that you've seen how Play renders a page, take a look at <code>AsyncController.scala</code>, which shows how to do asynchronous programming when handling a request.  The code is almost exactly the same as <code>HomeController.scala</code>, but instead of returning <code>Result</code>, the action returns <code>Future[Result]</code> to Play.  When the execution completes, Play can use a thread to render the result without blocking the thread in the mean time.
 
-    <p>
-        <a href="@routes.AsyncController.message">Click here for the AsyncController action!</a>
-    </p>
+    @*<p>*@
+        @*<a href="@routes.AsyncController.message">Click here for the AsyncController action!</a>*@
+    @*</p>*@
 
     <p>
         You can read more about <a href="https://www.playframework.com/documentation/@version/ScalaAsync">asynchronous actions</a> in the documentation.
@@ -85,9 +85,9 @@ GET     /               controllers.HomeController.index</code></pre>
         Both the HomeController and AsyncController are very simple, and typically controllers present the results of the interaction of several services.  As an example, see the <code>CountController</code>, which shows how to inject a component into a controller and use the component when handling requests.  The count controller increments every time you click on it, so keep clicking to see the numbers go up.
     </p>
 
-    <p>
-        <a href="@routes.CountController.count">Click here for the CountController action!</a>
-    </p>
+    @*<p>*@
+        @*<a href="@routes.CountController.count">Click here for the CountController action!</a>*@
+    @*</p>*@
 
     <p>
         You can read more about <a href="https://www.playframework.com/documentation/@version/ScalaDependencyInjection">dependency injection</a> in the documentation.
@@ -97,17 +97,17 @@ GET     /               controllers.HomeController.index</code></pre>
 
   <p>
     For more information on the various commands you can run on Play, i.e. running tests and packaging applications for production, see <a href="https://playframework.com/documentation/@version/PlayConsole">Using the Play console</a>.
-  </p>  
+  </p>
 
   <h2>Need to set up an IDE?</h2>
 
   <p>
-      You can start hacking your application right now using any text editor. Any changes will be automatically reloaded at each page refresh, 
+      You can start hacking your application right now using any text editor. Any changes will be automatically reloaded at each page refresh,
       including modifications made to Scala source files.
   </p>
 
   <p>
-      If you want to set-up your application in <strong>IntelliJ IDEA</strong> or any other Java IDE, check the 
+      If you want to set-up your application in <strong>IntelliJ IDEA</strong> or any other Java IDE, check the
       <a href="https://www.playframework.com/documentation/@version/IDE">Setting up your preferred IDE</a> page.
   </p>
 
@@ -137,7 +137,7 @@ GET     /               controllers.HomeController.index</code></pre>
   <p>
     Gitter is a real time chat channel, like IRC. The <a href="https://gitter.im/playframework/playframework">playframework/playframework</a>  channel is used by Play users to discuss the ins and outs of writing great Play applications.
   </p>
- 
+
 </article>
 
 <aside>
@@ -158,7 +158,7 @@ GET     /               controllers.HomeController.index</code></pre>
     <li><a href="http://groups.google.com/group/play-framework">Mailing List</a></li>
     <li><a href="https://gitter.im/playframework/playframework">Gitter Channel</a></li>
   </ul>
-  
+
 </aside>
 
 </div>

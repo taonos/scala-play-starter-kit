@@ -3,7 +3,9 @@ package controllers
 import DAL.DAO._
 import javax.inject._
 import play.api.mvc._
+import play.api.i18n.I18nSupport
 import monix.execution.Scheduler.Implicits.global
+import com.mohiva.play.silhouette.api.LoginInfo
 
 /**
   * This controller creates an `Action` to handle HTTP requests to the
@@ -13,7 +15,7 @@ import monix.execution.Scheduler.Implicits.global
 class HomeController @Inject()(cc: ControllerComponents,
                                accountRepo: AccountDAO,
                                productRepo: ProductDAO)
-    extends AbstractController(cc) {
+    extends AbstractController(cc) with I18nSupport {
 
   /**
     * Create an Action to render an HTML page with a welcome message.

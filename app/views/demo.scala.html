@@ -1,6 +1,6 @@
 @import DAL.table._
 
-@(accounts: Seq[AccountTable], products: Seq[ProductTable])
+@(accounts: Seq[AccountTable], products: Seq[ProductTable])(implicit messages: Messages)
 
 <!DOCTYPE html>
 
@@ -12,6 +12,7 @@
         <script src="@routes.Assets.versioned("javascripts/hello.js")" type="text/javascript"></script>
     </head>
     <body>
+        <a href="@controllers.routes.SignUpController.view">@messages("sign.up")</a>
         <ul>
             @display(account: AccountTable) = {
                 <li>@account.lastname, @account.firstname</li>
