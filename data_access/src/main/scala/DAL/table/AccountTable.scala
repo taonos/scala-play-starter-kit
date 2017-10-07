@@ -31,22 +31,13 @@ object AccountUsername {
   * @param email An unique email.
   * @param firstname First name.
   * @param lastname Last name.
-  * @param hasher
-  * @param password
-  * @param salt
-  * @param providerId The ID of the provider.
-  * @param providerKey A unique key which identifies a user on this provider (userID, email, ...).
   */
 final case class AccountTable(id: AccountId,
                               username: AccountUsername,
                               email: String,
                               firstname: String,
                               lastname: String,
-                              hasher: String,
-                              password: String,
-                              salt: Option[String],
-                              providerId: String,
-                              providerKey: String)
+                              credentialId: Option[CredentialId])
     extends TableWithPK[AccountId]
     with Timestamped {
 

@@ -5,16 +5,12 @@ import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{PasswordHasherRegistry, PasswordInfo}
 import com.mohiva.play.silhouette.impl.providers._
-import forms.SignUpForm
+import org.webjars.play.WebJarsUtil
 import play.api.i18n.{I18nSupport, Messages, MessagesApi}
-//import models.User
-//import models.services.{AuthTokenService, UserService}
-//import org.webjars.play.WebJarsUtil
-//import play.api.i18n.{I18nSupport, Messages}
-//import play.api.libs.mailer.{Email, MailerClient}
 import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, Request}
 import Domain.entity._
-import Domain.service.UserService
+import Domain.service.AccountService
+import forms.SignUpForm
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
@@ -22,10 +18,7 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 /**
   * The default env.
   */
-trait TestEnv extends Env {
-  type I = User
-  type A = CookieAuthenticator
-}
+
 import Domain.service.AuthTokenService
 
 /**
@@ -33,27 +26,18 @@ import Domain.service.AuthTokenService
   *
   * @param components             The Play controller components.
   * @param silhouette             The Silhouette stack.
-  * @param userService            The user service implementation.
-  * @param authInfoRepository     The auth info repository implementation.
-  * @param authTokenService       The auth token service implementation.
-//  * @param avatarService          The avatar service implementation.
-  * @param passwordHasherRegistry The password hasher registry.
-//  * @param mailerClient           The mailer client.
-//  * @param webJarsUtil            The webjar util.
+  * @param accountService            The user service implementation.
+  * @param webJarsUtil            The webjar util.
   * @param assets                 The Play assets finder.
   */
 @Singleton
 class SignUpController @Inject()(
-    components: ControllerComponents,
-    silhouette: Silhouette[TestEnv],
-    userService: UserService,
-    authInfoRepository: AuthInfoRepository,
-    authTokenService: AuthTokenService,
-    passwordHasherRegistry: PasswordHasherRegistry
-    //                                   mailerClient: MailerClient
+                                  components: ControllerComponents,
+                                  silhouette: Silhouette[Domain.repository.TestEnv],
+                                  accountService: AccountService
 )(
     implicit
-//                                   webJarsUtil: WebJarsUtil,
+    webJarsUtil: WebJarsUtil,
     assets: AssetsFinder
 ) extends AbstractController(components)
     with I18nSupport {
@@ -78,35 +62,19 @@ class SignUpController @Inject()(
     SignUpForm.form.bindFromRequest.fold(
       form => Future.successful(BadRequest(views.html.signUp(form))),
       data => {
-        val result = Redirect(routes.SignUpController.view())
-          .flashing("info" -> Messages("sign.up.email.sent", data.email))
-        val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
+        for {
+          r <- accountService.register(data.firstName + " " + data.lastName,
+            data.email,
+            data.firstName,
+            data.lastName,
+            data.password)
+          x <- r match {
+            case Left(_) => Future.successful(Redirect(routes.SignUpController.view()).flashing("warning" -> "User already exists. Please choose a different name."))
+            case Right(v) => Future.successful(Redirect(routes.SignUpController.view())
+              .flashing("info" -> "Sign up successful!"))
+          }
+        } yield x
 
-        userService.retrieve(loginInfo).flatMap {
-          case Some(user) =>
-//            val url = routes.SignInController.view().absoluteURL()
-
-            Future.successful(result)
-          case None =>
-            val passwordInfo = passwordHasherRegistry.current.hash(data.password)
-
-            for {
-              // TODO: implement username from form
-              user <- userService.createUser(data.firstName + " " + data.lastName,
-                                             data.email,
-                                             data.firstName,
-                                             data.lastName,
-                                             passwordInfo,
-                                             loginInfo)
-              authInfo  <- authInfoRepository.add(loginInfo, passwordInfo)
-              authToken <- authTokenService.create(user.id).runAsync
-            } yield {
-//              val url = routes.ActivateAccountController.activate(authToken.id).absoluteURL()
-
-              silhouette.env.eventBus.publish(SignUpEvent(user, request))
-              result
-            }
-        }
       }
     )
   }

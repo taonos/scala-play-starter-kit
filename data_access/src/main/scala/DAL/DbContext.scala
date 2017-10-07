@@ -21,7 +21,7 @@ class DbContext @Inject()()
     }
 }
 
-//TODO: decoder and encoder for joda-time will be obsolete when quill 1.4.1 is released.
+// TODO: decoder and encoder for joda-time will be obsolete when quill 1.4.1 is released.
 
 trait Decoder { this: AsyncContext[_, _, _] =>
 

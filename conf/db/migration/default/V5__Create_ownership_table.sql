@@ -5,11 +5,11 @@ CREATE TABLE ownership
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
   PRIMARY KEY (account_id, product_id),
-  CONSTRAINT fk_ownership__Users FOREIGN KEY (account_id)
+  CONSTRAINT fk_ownership__account FOREIGN KEY (account_id)
     REFERENCES account (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE RESTRICT,
-  CONSTRAINT fk_ownership__Products FOREIGN KEY (product_id)
+  CONSTRAINT fk_ownership__product FOREIGN KEY (product_id)
     REFERENCES product (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE RESTRICT

@@ -14,6 +14,14 @@ object Dependencies {
   }
 
   object Library {
+
+    object Play extends Entirety {
+      val mailer: ModuleID = "com.typesafe.play" %% "play-mailer" % "6.0.1"
+      val mailerGuice: ModuleID = "com.typesafe.play" %% "play-mailer-guice" % "6.0.1"
+
+      override val toSeq: Seq[ModuleID] = Seq(mailer, mailerGuice)
+    }
+
     object Silhouette extends Entirety {
       val core: ModuleID = "com.mohiva" %% "play-silhouette" % Version.silhouette
       val passwordBcrypt: ModuleID = "com.mohiva" %% "play-silhouette-password-bcrypt" % Version.silhouette

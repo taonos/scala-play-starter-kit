@@ -1,7 +1,17 @@
 sign.up = Sign up
+sign.up.now = Sign up now
 sign.up.title = Silhouette - Sign Up
 sign.up.account = Sign up for a new account
+
+sign.in = Sign in
+sign.in.title = Silhouette - Sign In
+sign.in.credentials = Sign in with your credentials
+
 first.name = First name
 last.name = Last Name
 full.name = Full Name
 email = Email
+password = Password
+not.a.member = Not a member?
+
+remember.me = Remember my login on this computer

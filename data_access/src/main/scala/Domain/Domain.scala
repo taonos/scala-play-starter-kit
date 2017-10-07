@@ -1,4 +1,3 @@
-
 import java.util.UUID
 
 package Domain {
@@ -10,11 +9,18 @@ package Domain {
     import DAL.table.{AccountTable, AccountUsername}
     import entity.{User, UserId}
     import Domain.repository._
-    import com.mohiva.play.silhouette.api.LoginInfo
-    import com.mohiva.play.silhouette.api.util.PasswordInfo
+    import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
+    import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
+    import com.mohiva.play.silhouette.api.util.{Clock, Credentials, PasswordHasherRegistry, PasswordInfo}
+    import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
+    import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+    import play.api.mvc.AnyContent
+    import play.mvc.Http.RequestHeader
     import shapeless.tag.@@
 
     import scala.concurrent.Future
+    import scala.concurrent.duration.FiniteDuration
+
     /**
       * Handles actions to auth tokens.
       *
@@ -23,9 +29,9 @@ package Domain {
 //  * @param ex           The execution context.
       */
     @Singleton
-    class AuthTokenService @Inject() (
-                                       authTokenRepo: AuthTokenRepository
-                                     ) {
+    class AuthTokenService @Inject()(
+        authTokenRepo: AuthTokenRepository
+    ) {
 
       import scala.concurrent.duration._
 
@@ -48,42 +54,15 @@ package Domain {
       def validate(id: UUID @@ UserId) = authTokenRepo.validate(id)
     }
 
-
-
     import com.mohiva.play.silhouette.api.services.IdentityService
     import shapeless.tag
     import DAL.DAO.AccountDAO
     import DAL.table.AccountId
     import Domain.entity.UserId
-    /**
-      * Handles actions to users.
-      *
-      * @param userRepo The User repository.
-//  * @param ex      The execution context.
-      */
-    @Singleton
-    class UserService @Inject() (userRepo: UserRepository) {
-      import monix.execution.Scheduler.Implicits.global
-      /**
-        * Retrieves a user that matches the specified ID.
-        *
-        * @param id The ID to retrieve a user.
-        * @return The retrieved user or None if no user could be retrieved for the given ID.
-        */
-      def retrieve(id: UUID) = userRepo.retrieve(id)
+    import play.api.mvc.Request
 
-      /**
-        * Retrieves a user that matches the specified login info.
-        *
-        * @param loginInfo The login info to retrieve a user.
-        * @return The retrieved user or None if no user could be retrieved for the given login info.
-        */
-      def retrieve(loginInfo: LoginInfo): Future[Option[User]] =
-        userRepo.retrieve(loginInfo)
+    final case class RememberMeConfig(cookieMaxAge: FiniteDuration, authenticatorIdleTimeout: FiniteDuration, authenticatorExpiry: FiniteDuration)
 
-      def createUser(username: String, email: String, firstname: String, lastname: String, passwordInfo: PasswordInfo, loginInfo: LoginInfo): Future[User] =
-        userRepo.createUser(username, email, firstname, lastname, passwordInfo, loginInfo)
-    }
 
   }
 
@@ -91,22 +70,45 @@ package Domain {
 
     import javax.inject.{Inject, Singleton}
 
-    import DAL.DAO.{AccountDAO, AuthTokenDAO}
+    import DAL.DAO.{AccountDAO, AuthTokenDAO, CredentialDAO}
+    import DAL.DbContext
     import DAL.table._
     import Domain.entity._
-    import com.mohiva.play.silhouette.api.LoginInfo
+    import com.mohiva.play.silhouette.api._
     import com.mohiva.play.silhouette.api.services.IdentityService
     import com.mohiva.play.silhouette.api.util.{Clock, PasswordInfo}
+    import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
     import org.joda.time.DateTimeZone
+    import play.api.mvc.{AnyContent, Request, RequestHeader}
     import shapeless.tag
     import tag._
 
-    import scala.concurrent.Future
+    import scala.concurrent.{Future, ExecutionContext}
+
+    trait TestEnv extends Env {
+      type I = User
+      type A = CookieAuthenticator
+    }
 
     @Singleton
-    class UserRepository @Inject() (accountDAO: AccountDAO) extends IdentityService[User] {
-      import monix.execution.Scheduler.Implicits.global
-      import UserRepository._
+    class AccountEventBus @Inject()(silhouette: Silhouette[TestEnv]) {
+      def publishSignUpEvent[I <: Identity](identity: I,
+                                            request: play.api.mvc.RequestHeader): Future[Unit] = {
+        Future.successful(silhouette.env.eventBus.publish(SignUpEvent(identity, request)))
+      }
+
+      def publishSignInEvent[I <: Identity](identity: I, request: Request[AnyContent]): Future[Unit] = {
+        Future.successful(silhouette.env.eventBus.publish(LoginEvent(identity, request)))
+      }
+    }
+
+    @Singleton
+    class UserRepository {}
+
+    @Singleton
+    class AccountRepository @Inject()(val ctx: DbContext, accountDAO: AccountDAO, credentialDAO: CredentialDAO)(implicit ec: ExecutionContext) extends IdentityService[User] {
+      import AccountRepository._
+      import ctx._
 
       /**
         * Retrieves a user that matches the specified ID.
@@ -114,7 +116,7 @@ package Domain {
         * @param id The ID to retrieve a user.
         * @return The retrieved user or None if no user could be retrieved for the given ID.
         */
-      def retrieve(id: UUID) = accountDAO.findByPk(AccountId(id)).runAsync
+      def retrieve(id: UUID) = accountDAO.findBy(AccountId(id))
 
       /**
         * Retrieves a user that matches the specified login info.
@@ -123,70 +125,55 @@ package Domain {
         * @return The retrieved user or None if no user could be retrieved for the given login info.
         */
       def retrieve(loginInfo: LoginInfo): Future[Option[User]] =
-        accountDAO.findBy(loginInfo.providerID, loginInfo.providerKey)
-          .map(_.map(accountTableToUser))
-          .runAsync
+        for {
+          account <- accountDAO.findBy(AccountUsername(loginInfo.providerKey))
+          user = account.map(accountTableToUser)
+        } yield user
 
-      def createUser(username: String, email: String, firstname: String, lastname: String, passwordInfo: PasswordInfo, loginInfo: LoginInfo): Future[User] =
-        accountDAO
-          .insert(AccountTable(
-            AccountId(UUID.randomUUID()),
-            AccountUsername(username),
-            email,
-            firstname,
-            lastname,
-            passwordInfo.hasher,
-            passwordInfo.password,
-            passwordInfo.salt,
-            loginInfo.providerID,
-            loginInfo.providerKey
-          ))
+      def createUser(username: String,
+                     email: String,
+                     firstname: String,
+                     lastname: String,
+                     passwordInfo: PasswordInfo,
+                     loginInfo: LoginInfo): Future[User] = {
+        ctx.transaction[AccountTable] { implicit c =>
+          for {
+            c <- credentialDAO.insert(CredentialTable(
+              CredentialId(UUID.randomUUID()),
+              passwordInfo.hasher,
+              passwordInfo.password,
+              passwordInfo.salt
+            ))
+            a <- accountDAO.insert(AccountTable(
+              AccountId(UUID.randomUUID()),
+              AccountUsername(username),
+              email,
+              firstname,
+              lastname,
+              Some(c.id)
+            ))
+          } yield a
+
+        }
           .map(accountTableToUser)
-          .runAsync
-
-      //  /**
-      //    * Saves the social profile for a user.
-      //    *
-      //    * If a user exists for this profile then update the user, otherwise create a new user with the given profile.
-      //    *
-      //    * @param profile The social profile to save.
-      //    * @return The user for whom the profile was saved.
-      //    */
-      //  def save(profile: CommonSocialProfile) = {
-      //    accountDAO.find(profile.loginInfo).flatMap {
-      //      case Some(user) => // Update user with profile
-      //        accountDAO.save(user.copy(
-      //          firstName = profile.firstName,
-      //          lastName = profile.lastName,
-      //          fullName = profile.fullName,
-      //          email = profile.email,
-      //          avatarURL = profile.avatarURL
-      //        ))
-      //      case None => // Insert a new user
-      //        accountDAO.save(User(
-      //          userID = UUID.randomUUID(),
-      //          loginInfo = profile.loginInfo,
-      //          firstName = profile.firstName,
-      //          lastName = profile.lastName,
-      //          fullName = profile.fullName,
-      //          email = profile.email,
-      //          avatarURL = profile.avatarURL,
-      //          activated = true
-      //        ))
-      //    }
-      //  }
+      }
 
     }
 
-    object UserRepository {
+    object AccountRepository {
 
       private def accountTableToUser(v: AccountTable): User =
-        User(tag[UserId][UUID](v.id.value), v.username.value, v.email, v.firstname, v.lastname, PasswordInfo(v.hasher, v.password, v.salt), LoginInfo(v.providerId, v.providerKey))
+        User(
+          tag[UserId][UUID](v.id.value),
+          v.username.value,
+          v.email,
+          v.firstname,
+          v.lastname
+        )
     }
 
     @Singleton
-    class AuthTokenRepository @Inject() (authTokenDAO: AuthTokenDAO,
-                                         clock: Clock) {
+    class AuthTokenRepository @Inject()(authTokenDAO: AuthTokenDAO, clock: Clock) {
 
       import AuthTokenRepository._
       import scala.concurrent.duration._
@@ -199,7 +186,10 @@ package Domain {
         * @return The saved auth token.
         */
       def create(userID: UUID @@ UserId, expiry: FiniteDuration = 5.minutes) = {
-        val token = AuthToken(tag[entity.AuthTokenId][UUID](UUID.randomUUID()), userID, clock.now.withZone(DateTimeZone.UTC).plusSeconds(expiry.toSeconds.toInt))
+        val token = AuthToken(
+          tag[entity.AuthTokenId][UUID](UUID.randomUUID()),
+          userID,
+          clock.now.withZone(DateTimeZone.UTC).plusSeconds(expiry.toSeconds.toInt))
         authTokenDAO.insert(authTokenToAuthTable(token))
       }
 
@@ -238,23 +228,19 @@ package Domain {
       */
     final case class AuthToken(id: UUID @@ AuthTokenId, userID: UUID @@ UserId, expiry: DateTime)
 
+    sealed trait Hasher
+    case object BCryptSHA256
+
+    final case class Password(hasher: Hasher, password: String, salt: Option[String] = None)
+
+    sealed trait Provider
+    case object Credentials
+
+    final case class Login(provider: Provider, providerKey: String)
+
+//    final case class Account()
 
 
-    final case class Password()
-
-    final case class Login()
-
-    sealed trait UserId
-
-    // TODO: May not need to have LoginInfo explicitly since it can be derived from id and providerId
-    final case class User(id: UUID @@ UserId,
-                          username: String,
-                          email: String,
-                          firstname: String,
-                          lastname: String,
-                          passwordInfo: PasswordInfo,
-                          loginInfo: LoginInfo)
-        extends Identity
 
   }
 }

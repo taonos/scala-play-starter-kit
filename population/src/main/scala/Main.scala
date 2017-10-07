@@ -1,20 +1,42 @@
 import DAL.DbContext
-import DAL.DAO.{AccountDAO, OwnershipDAO, ProductDAO}
+import DAL.DAO.{AccountDAO, CredentialDAO, OwnershipDAO, ProductDAO}
 import DAL.table._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
-import monix.execution.Scheduler.Implicits.global
 import java.util.UUID
+
+import com.mohiva.play.silhouette.password.BCryptSha256PasswordHasher
 
 
 object Main extends App {
 
+  val hasher = new BCryptSha256PasswordHasher()
+  val ec = monix.execution.Scheduler.Implicits.global
+
+
   val ctx = new DbContext()
   import ctx._
-  val productDAO = new ProductDAO(ctx)
-  val accountDAO = new AccountDAO(ctx)
-  val ownershipDAO = new OwnershipDAO(ctx)
+  val credentialDAO = new CredentialDAO(ctx)(ec)
+  val productDAO = new ProductDAO(ctx)(ec)
+  val accountDAO = new AccountDAO(ctx)(ec)
+  val ownershipDAO = new OwnershipDAO(ctx)(ec)
+
+  val credentialIds = Seq(
+    CredentialId(UUID.fromString("c32cb561-4a12-4531-abb3-678cce62a103")),
+    CredentialId(UUID.fromString("6a9e6978-6580-45a1-aac7-d0241e5070a7"))
+  )
+
+  val credentialDetails = Seq(
+    hasher.hash("12345678"),
+    hasher.hash("12345678")
+  )
+
+  val credentialEntities = credentialIds
+    .zip(credentialDetails)
+    .map { case (id, v) =>
+      CredentialTable(id, v.hasher, v.password, v.salt)
+    }
 
   val accountId = Seq(
     AccountId(UUID.fromString("36e79363-9c93-46f3-8de2-985d3b0d8a41")),
@@ -28,7 +50,8 @@ object Main extends App {
 
   val accountEntities = accountId
     .zip(userDetails)
-    .map { case (id, (username, email, firstname, lastname)) => AccountTable(id, username, email, firstname, lastname)}
+    .zip(credentialIds)
+    .map { case ((id, (username, email, firstname, lastname)), credentialId) => AccountTable(id, username, email, firstname, lastname, Some(credentialId))}
 
   val productUUIDs = Seq(
     UUID.fromString("e2c789d0-8216-4258-bfdb-217f4824bc29"),
@@ -49,11 +72,15 @@ object Main extends App {
     .map(v => OwnershipTable(OwnershipId(v._1, v._2)))
 
 
-  val result = ctx.transaction_task { implicit ec =>
-    (accountDAO.insertBatch(accountEntities) zip productDAO.insertBatch(productEntities))
-    .flatMap(_ => ownershipDAO.insertBatch(ownershipEntities))
-  }
+  val result = ctx.transaction { implicit ec =>
+    for {
+      _ <- credentialDAO.insertBatch(credentialEntities)
+      _ <- accountDAO.insertBatch(accountEntities)
+      _ <- productDAO.insertBatch(productEntities)
+      d <- ownershipDAO.insertBatch(ownershipEntities)
+    } yield ()
+  }(ec)
 
-  val inserted = Await.result(result.runAsync, Duration.Inf)
+  val inserted = Await.result(result, Duration.Inf)
   println(s"Database population inserted with $inserted records.")
 }

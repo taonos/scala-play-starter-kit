@@ -7,6 +7,8 @@ import monix.eval.Task
 import DAL.table.{AccountUsername, OwnershipId, OwnershipTable, ProductId}
 import DAL.DbContext
 
+import scala.concurrent.{Future, ExecutionContext}
+
 //trait HasIdentifier {
 //  val id
 //}
@@ -27,17 +29,17 @@ trait DAOCrud[M[_], TB <: DAL.table.Table] extends DAO with DbContextable {
 
   val table: Quoted[EntityQuery[TB]]
 
-  def findAll: Task[Seq[TB]]
+  def findAll: M[Seq[TB]]
 
-  def insert(row: TB): Task[TB]
+  def insert(row: TB): M[TB]
 
-  def insertBatch(rows: Seq[TB]): Task[Long]
+  def insertBatch(rows: Seq[TB]): M[Long]
 
-  def update(row: TB): Task[TB]
+  def update(row: TB): M[TB]
 
-  def updateBatch(rows: Seq[TB]): Task[Long]
+  def updateBatch(rows: Seq[TB]): M[Long]
 
-  def delete(row: TB): Task[Unit]
+  def delete(row: TB): M[Unit]
 
 //  def upsert(row: TB): Task[TB]
 
@@ -45,30 +47,29 @@ trait DAOCrud[M[_], TB <: DAL.table.Table] extends DAO with DbContextable {
 
 trait DAOCrudWithPk[M[_], TK <: TableWithPK[C], C <: PK] extends DAOCrud[M, TK] {
 
-  def findByPk(pk: C): Task[Option[TK]]
+  def findByPk(pk: C): M[Option[TK]]
 
-  override def delete(row: TK): Task[Unit] =
+  override def delete(row: TK): M[Unit] =
     deleteByPk(row.pk)
 
-  def deleteByPk(pk: C): Task[Unit]
+  def deleteByPk(pk: C): M[Unit]
 }
 
 @Singleton
-class OwnershipDAO @Inject()(val ctx: DbContext)
-    extends DAOCrudWithPk[Task, OwnershipTable, OwnershipId] {
+class OwnershipDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
   import ctx._
 
   private implicit val updateExclusion =
     updateMeta[OwnershipTable](_.createdAt)
 
-  override val table = quote(querySchema[OwnershipTable]("ownership"))
+  val table = quote(querySchema[OwnershipTable]("ownership"))
 
-  override def findAll: Task[Seq[OwnershipTable]] =
+  def findAll: Task[Seq[OwnershipTable]] =
     Task.deferFutureAction { implicit scheduler =>
       run(table)
     }
 
-  override def findByPk(pk: OwnershipId): Task[Option[OwnershipTable]] =
+  def findByPk(pk: OwnershipId): Task[Option[OwnershipTable]] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(
@@ -79,15 +80,12 @@ class OwnershipDAO @Inject()(val ctx: DbContext)
       }
       .map(_.headOption)
 
-  override def insert(row: OwnershipTable): Task[OwnershipTable] =
-    Task
-      .deferFutureAction { implicit scheduler =>
-        run(table.insert(lift(row)))
-      }
+  def insert(row: OwnershipTable): Future[OwnershipTable] =
+    run(table.insert(lift(row)))
       .map(_ => row)
 
-  override def insertBatch(rows: Seq[OwnershipTable]): Task[Long] =
-    Task.gatherUnordered(rows.map(insert)).map(_.length)
+  def insertBatch(rows: Seq[OwnershipTable]): Future[Long] =
+    Future.sequence(rows.map(insert)).map(_.length)
 //    Task.deferFutureAction { implicit scheduler =>
 //      run(quote {
 //        liftQuery(rows).foreach(v => table.insert(v))
@@ -95,14 +93,14 @@ class OwnershipDAO @Inject()(val ctx: DbContext)
 //    }
 //      .map(_.length)
 
-  override def update(row: OwnershipTable): Task[OwnershipTable] =
+  def update(row: OwnershipTable): Task[OwnershipTable] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(table.update(lift(row)))
       }
       .map(_ => row)
 
-  override def updateBatch(rows: Seq[OwnershipTable]): Task[Long] =
+  def updateBatch(rows: Seq[OwnershipTable]): Task[Long] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(quote {
@@ -111,7 +109,7 @@ class OwnershipDAO @Inject()(val ctx: DbContext)
       }
       .map(_.length)
 
-  override def deleteByPk(pk: OwnershipId): Task[Unit] =
+  def deleteByPk(pk: OwnershipId): Task[Unit] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(
@@ -123,17 +121,3 @@ class OwnershipDAO @Inject()(val ctx: DbContext)
       }
       .map(_ => ())
 }
-
-case class AccountEntity()
-
-//case class
-//
-//@Singleton
-//class AccountRepository @Inject() (val accountDAO: AccountDAO) {
-//  def changeName(firstname: String, lastname: String)
-//}
-
-@Singleton
-class OwnershipRepository @Inject()(val ownershipDAO: OwnershipDAO) {}
-
-//case class Account

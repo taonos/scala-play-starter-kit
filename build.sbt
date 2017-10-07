@@ -119,7 +119,8 @@ lazy val dataAccessDependencies = Seq(PostgreSQL.db,
                                       Quill.asyncpostgresql,
                                       JavaxInject.inject,
                                       Shapeless.core,
-                                      JodaTime.core) ++ Monix.toSeq ++ Silhouette.toSeq
+                                      JodaTime.core,
+                                      Enumeratum.core) ++ Monix.toSeq ++ Silhouette.toSeq
 
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
 
@@ -134,7 +135,8 @@ lazy val appDependencies = Seq(jdbc,
                                Cats.core,
                                Shapeless.core,
                                Bootstrap.core,
-                               PureConfig.core) ++
+                               PureConfig.core,
+                                Enumeratum.core) ++
   Monix.toSeq ++
   Silhouette.toSeq ++
   Circe.toSeq ++

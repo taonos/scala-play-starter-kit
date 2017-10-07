@@ -1,24 +1,21 @@
 package DAL.DAO
 
-import java.util.UUID
-
 import DAL.DbContext
 import DAL.table.{ProductId, ProductTable}
 import javax.inject.{Inject, Singleton}
-
 import monix.eval.Task
+import scala.concurrent.{Future, ExecutionContext}
 
 @Singleton
-class ProductDAO @Inject()(val ctx: DbContext)
-    extends DAOCrudWithPk[Task, ProductTable, ProductId] {
+class ProductDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
   import ctx._
 
   private implicit val updateExclusion =
     updateMeta[ProductTable](_.id, _.createdAt)
 
-  override val table = quote(querySchema[ProductTable]("product"))
+  val table = quote(querySchema[ProductTable]("product"))
 
-  override def findAll: Task[Seq[ProductTable]] =
+  def findAll: Task[Seq[ProductTable]] =
     Task.deferFutureAction { implicit scheduler =>
       run(table)
     }
@@ -32,17 +29,14 @@ class ProductDAO @Inject()(val ctx: DbContext)
       }
       .map(_.headOption)
 
-  override def insert(row: ProductTable): Task[ProductTable] =
-    Task
-      .deferFutureAction { implicit scheduler =>
-        run(
-          table.insert(lift(row))
-        )
-      }
-      .map(_ => row)
+  def insert(row: ProductTable): Future[ProductTable] =
+    run(
+      table.insert(lift(row))
+    )
+    .map(_ => row)
 
-  override def insertBatch(rows: Seq[ProductTable]): Task[Long] =
-    Task.gatherUnordered(rows.map(insert)).map(_.length)
+  def insertBatch(rows: Seq[ProductTable]): Future[Long] =
+    Future.sequence(rows.map(insert)).map(_.length)
 //    Task.deferFutureAction { implicit scheduler =>
 //      run(quote {
 //        liftQuery(rows).foreach(v => table.insert(v))
@@ -50,14 +44,14 @@ class ProductDAO @Inject()(val ctx: DbContext)
 //    }
 //      .map(_.length)
 
-  override def update(row: ProductTable): Task[ProductTable] =
+  def update(row: ProductTable): Task[ProductTable] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(table.update(lift(row)))
       }
       .map(_ => row)
 
-  override def updateBatch(rows: Seq[ProductTable]): Task[Long] =
+  def updateBatch(rows: Seq[ProductTable]): Task[Long] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(quote {
@@ -66,7 +60,7 @@ class ProductDAO @Inject()(val ctx: DbContext)
       }
       .map(_.length)
 
-  override def deleteByPk(pk: ProductId): Task[Unit] =
+  def deleteByPk(pk: ProductId): Task[Unit] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(table.filter(_.id == lift(pk)).delete)

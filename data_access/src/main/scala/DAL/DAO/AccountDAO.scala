@@ -1,55 +1,49 @@
 package DAL.DAO
 
 import DAL.DbContext
-import DAL.table.{AccountTable, AccountId}
+import DAL.table.{AccountId, AccountTable, AccountUsername}
 import javax.inject.{Inject, Singleton}
+
 import monix.eval.Task
 
+import scala.concurrent.{ExecutionContext, Future}
+
 @Singleton
-class AccountDAO @Inject()(val ctx: DbContext)
-    extends DAOCrudWithPk[Task, AccountTable, AccountId] {
+class AccountDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
   import ctx._
 
   private implicit val updateExclusion =
     updateMeta[AccountTable](_.id, _.createdAt)
 
-  override val table = quote(querySchema[AccountTable]("account"))
+  val table = quote(querySchema[AccountTable]("account"))
 
-  override def findAll: Task[Seq[AccountTable]] =
+  def findAll: Task[Seq[AccountTable]] =
     Task.deferFutureAction { implicit scheduler =>
       run(table)
     }
 
-  override def findByPk(pk: AccountId): Task[Option[AccountTable]] =
-    Task
-      .deferFutureAction { implicit scheduler =>
-        run(
-          table
-            .filter(_.id == lift(pk)))
-      }
-      .map(_.headOption)
+  def findBy(pk: AccountId): Future[Option[AccountTable]] =
+    run(
+      table
+        .filter(_.id == lift(pk)))
+    .map(_.headOption)
+
+  def findBy(username: AccountUsername): Future[Option[AccountTable]] =
+    run(table.filter(_.username == lift(username)))
+    .map(_.headOption)
 
   private val insertQuote = quote { (row: AccountTable) =>
     table.insert(row)
   }
 
-  def findBy(providerId: String, providerKey: String): Task[Option[AccountTable]] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table.filter(v => v.providerId == lift(providerId) && v.providerKey == lift(providerKey)))
-    }
-    .map(_.headOption)
+  def insert(row: AccountTable): Future[AccountTable] =
+    run(
+      insertQuote(lift(row))
+    )
+    .map(_ => row)
 
-  override def insert(row: AccountTable): Task[AccountTable] =
-    Task
-      .deferFutureAction { implicit scheduler =>
-        run(
-          insertQuote(lift(row))
-        )
-      }
-      .map(_ => row)
-
-  override def insertBatch(rows: Seq[AccountTable]): Task[Long] =
-    Task.gatherUnordered(rows.map(insert)).map(_.length)
+  def insertBatch(rows: Seq[AccountTable]): Future[Long] =
+    Future.sequence(rows.map(insert)).map(_.length)
 //    Task.deferFutureAction { implicit scheduler =>
 //      run(quote {
 //        liftQuery(rows).foreach(v => table.insert(v))
@@ -57,14 +51,14 @@ class AccountDAO @Inject()(val ctx: DbContext)
 //    }
 //      .map(_.length)
 
-  override def update(row: AccountTable): Task[AccountTable] =
+  def update(row: AccountTable): Task[AccountTable] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(table.update(lift(row)))
       }
       .map(_ => row)
 
-  override def updateBatch(rows: Seq[AccountTable]): Task[Long] =
+  def updateBatch(rows: Seq[AccountTable]): Task[Long] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(quote {
@@ -73,7 +67,7 @@ class AccountDAO @Inject()(val ctx: DbContext)
       }
       .map(_.length)
 
-  override def deleteByPk(pk: AccountId): Task[Unit] =
+  def deleteByPk(pk: AccountId): Task[Unit] =
     Task
       .deferFutureAction { implicit scheduler =>
         run(table.filter(_.id == lift(pk)).delete)

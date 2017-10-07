@@ -1,12 +1,7 @@
 import com.google.inject.{AbstractModule, Provides, TypeLiteral}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{PasswordHasherRegistry, PasswordInfo}
-import com.mohiva.play.silhouette.crypto.{
-  JcaCrypter,
-  JcaCrypterSettings,
-  JcaSigner,
-  JcaSignerSettings
-}
+import com.mohiva.play.silhouette.crypto.{JcaCrypter, JcaCrypterSettings, JcaSigner, JcaSignerSettings}
 import com.mohiva.play.silhouette.impl.providers.{OAuth1Info, OAuth2Info, OpenIDInfo}
 import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}
 import com.mohiva.play.silhouette.password.{BCryptPasswordHasher, BCryptSha256PasswordHasher}
@@ -20,11 +15,8 @@ import com.mohiva.play.silhouette.api.crypto.{Crypter, CrypterAuthenticatorEncod
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.api.util.{Clock, FingerprintGenerator, IDGenerator}
 import com.mohiva.play.silhouette.api.{Environment, EventBus, Silhouette, SilhouetteProvider}
-import com.mohiva.play.silhouette.impl.authenticators.{
-  CookieAuthenticator,
-  CookieAuthenticatorService,
-  CookieAuthenticatorSettings
-}
+import com.mohiva.play.silhouette.impl.authenticators.{CookieAuthenticator, CookieAuthenticatorService, CookieAuthenticatorSettings}
+import Domain.service.RememberMeConfig
 import play.api.Configuration
 import play.api.mvc.CookieHeaderEncoding
 import pureconfig._
@@ -40,8 +32,9 @@ import pureconfig._
   * configuration file.
   */
 class Module extends AbstractModule {
-  import controllers.TestEnv
+  import Domain.repository.TestEnv
   import scala.concurrent.ExecutionContext.Implicits.global
+  import Module._
 
   override def configure() = {
 
@@ -74,7 +67,7 @@ class Module extends AbstractModule {
     * @return The Silhouette environment.
     */
   @Provides
-  def provideEnvironment(userRepo: UserRepository,
+  def provideEnvironment(userRepo: AccountRepository,
                          authenticatorService: AuthenticatorService[CookieAuthenticator],
                          eventBus: EventBus): Environment[TestEnv] = {
 
@@ -184,4 +177,21 @@ class Module extends AbstractModule {
                                    idGenerator,
                                    clock)
   }
+
+  @Provides
+  @throws[ConfigReaderException[_]]
+  def provideRememberMeConfig: RememberMeConfig = {
+    loadConfigOrThrow[RememberMeConfig]("silhouette.authenticator.rememberMe")
+  }
+}
+
+object Module {
+
+  /**
+    * Provides hint to extract configurations using camel case.
+    *
+    * @tparam T The type of config.
+    * @return A hint for PureConfig.
+    */
+  implicit def hint[T]: ProductHint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
 }
