@@ -8,12 +8,10 @@ import java.util.UUID
 
 import com.mohiva.play.silhouette.password.BCryptSha256PasswordHasher
 
-
 object Main extends App {
 
   val hasher = new BCryptSha256PasswordHasher()
   val ec = monix.execution.Scheduler.Implicits.global
-
 
   val ctx = new DbContext()
   import ctx._
@@ -34,8 +32,9 @@ object Main extends App {
 
   val credentialEntities = credentialIds
     .zip(credentialDetails)
-    .map { case (id, v) =>
-      CredentialTable(id, v.hasher, v.password, v.salt)
+    .map {
+      case (id, v) =>
+        CredentialTable(id, v.hasher, v.password, v.salt)
     }
 
   val accountId = Seq(
@@ -51,7 +50,10 @@ object Main extends App {
   val accountEntities = accountId
     .zip(userDetails)
     .zip(credentialIds)
-    .map { case ((id, (username, email, firstname, lastname)), credentialId) => AccountTable(id, username, email, firstname, lastname, Some(credentialId))}
+    .map {
+      case ((id, (username, email, firstname, lastname)), credentialId) =>
+        AccountTable(id, username, email, firstname, lastname, Some(credentialId))
+    }
 
   val productUUIDs = Seq(
     UUID.fromString("e2c789d0-8216-4258-bfdb-217f4824bc29"),
@@ -70,7 +72,6 @@ object Main extends App {
   val ownershipEntities = accountId
     .zip(productUUIDs)
     .map(v => OwnershipTable(OwnershipId(v._1, v._2)))
-
 
   val result = ctx.transaction { implicit ec =>
     for {

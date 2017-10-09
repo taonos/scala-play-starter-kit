@@ -26,11 +26,11 @@ class AccountDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
     run(
       table
         .filter(_.id == lift(pk)))
-    .map(_.headOption)
+      .map(_.headOption)
 
   def findBy(username: AccountUsername): Future[Option[AccountTable]] =
     run(table.filter(_.username == lift(username)))
-    .map(_.headOption)
+      .map(_.headOption)
 
   private val insertQuote = quote { (row: AccountTable) =>
     table.insert(row)
@@ -39,8 +39,7 @@ class AccountDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
   def insert(row: AccountTable): Future[AccountTable] =
     run(
       insertQuote(lift(row))
-    )
-    .map(_ => row)
+    ).map(_ => row)
 
   def insertBatch(rows: Seq[AccountTable]): Future[Long] =
     Future.sequence(rows.map(insert)).map(_.length)

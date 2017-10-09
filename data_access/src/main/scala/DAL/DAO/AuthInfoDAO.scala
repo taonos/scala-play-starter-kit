@@ -1,5 +1,3 @@
 package DAL.DAO
 
-class AuthInfoDAO {
-
-}
+class AuthInfoDAO {}

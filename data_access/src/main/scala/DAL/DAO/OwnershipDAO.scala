@@ -7,7 +7,7 @@ import monix.eval.Task
 import DAL.table.{AccountUsername, OwnershipId, OwnershipTable, ProductId}
 import DAL.DbContext
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 //trait HasIdentifier {
 //  val id
@@ -75,8 +75,7 @@ class OwnershipDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) 
         run(
           table
             .filter(v =>
-              v.id.accountId == lift(pk.accountId) && v.id.productId == lift(
-                pk.productId)))
+              v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId)))
       }
       .map(_.headOption)
 
@@ -112,12 +111,9 @@ class OwnershipDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) 
   def deleteByPk(pk: OwnershipId): Task[Unit] =
     Task
       .deferFutureAction { implicit scheduler =>
-        run(
-          table
-            .filter(v =>
-              v.id.accountId == lift(pk.accountId) && v.id.productId == lift(
-                pk.productId))
-            .delete)
+        run(table
+          .filter(v => v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId))
+          .delete)
       }
       .map(_ => ())
 }

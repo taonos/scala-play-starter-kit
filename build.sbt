@@ -41,7 +41,7 @@ lazy val commonSettings = Seq(
     "-feature", // should enable Scala features explicitly
     "-language:higherKinds", // higher-kinded types are useful with typeclasses
     "-language:implicitConversions", // implicit parameters and classes are useful
-    "-unchecked",                    // static code shouldn't depend on assumptions
+    "-unchecked", // static code shouldn't depend on assumptions
     //  "-Xfatal-warnings",             // warnings SHOULD be errors - it will help with code smells
     "-Xfuture", // enable future language features
     "-Xlint:delayedinit-select", // selecting member of DelayedInit
@@ -56,7 +56,7 @@ lazy val commonSettings = Seq(
     "-Xlint:unsound-match", // the used pattern matching is unsafe
     "-Ywarn-dead-code", // warn about unused code
     "-Ywarn-extra-implicit", // there should be a max of 1 implicit parameter for each definition
-    "-Ywarn-inaccessible",   // warn about inaccessible types in method signatures
+    "-Ywarn-inaccessible", // warn about inaccessible types in method signatures
 //    "-Ywarn-unused:imports", // warn about unused imports
 //    "-Ywarn-unused:locals", // warn about unused local variables
 //    "-Ywarn-unused:params", // warn about unused parameters
@@ -124,19 +124,21 @@ lazy val dataAccessDependencies = Seq(PostgreSQL.db,
 
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
 
-lazy val appDependencies = Seq(jdbc,
-                               ehcache,
-                               ws,
-                               specs2 % Test,
-                               guice,
-                               PostgreSQL.db,
-                               Quill.asyncpostgresql,
-                               FlywayDB.play,
-                               Cats.core,
-                               Shapeless.core,
-                               Bootstrap.core,
-                               PureConfig.core,
-                                Enumeratum.core) ++
+lazy val appDependencies = Seq(
+  jdbc,
+  ehcache,
+  ws,
+  specs2 % Test,
+  guice,
+  PostgreSQL.db,
+  Quill.asyncpostgresql,
+  FlywayDB.play,
+  Cats.core,
+  Shapeless.core,
+  Bootstrap.core,
+  PureConfig.core,
+  Enumeratum.core
+) ++
   Monix.toSeq ++
   Silhouette.toSeq ++
   Circe.toSeq ++

@@ -25,6 +25,8 @@ object CredentialId {
 final case class CredentialTable(id: CredentialId,
                                  hasher: String,
                                  hashedPassword: String,
-                                 salt: Option[String]) extends TableWithPK[CredentialId] with Timestamped {
+                                 salt: Option[String])
+    extends TableWithPK[CredentialId]
+    with Timestamped {
   val pk: CredentialId = id
 }

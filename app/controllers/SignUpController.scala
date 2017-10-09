@@ -18,7 +18,6 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 /**
   * The default env.
   */
-
 import Domain.service.AuthTokenService
 
 /**
@@ -32,9 +31,9 @@ import Domain.service.AuthTokenService
   */
 @Singleton
 class SignUpController @Inject()(
-                                  components: ControllerComponents,
-                                  silhouette: Silhouette[Domain.repository.TestEnv],
-                                  accountService: AccountService
+    components: ControllerComponents,
+    silhouette: Silhouette[Domain.repository.DefaultEnv],
+    accountService: AccountService
 )(
     implicit
     webJarsUtil: WebJarsUtil,
@@ -64,15 +63,19 @@ class SignUpController @Inject()(
       data => {
         for {
           r <- accountService.register(data.firstName + " " + data.lastName,
-            data.email,
-            data.firstName,
-            data.lastName,
-            data.password)
+                                       data.email,
+                                       data.firstName,
+                                       data.lastName,
+                                       data.password)
           x <- r match {
-            case Left(_) => Future.successful(Redirect(routes.SignUpController.view()).flashing("warning" -> "User already exists. Please choose a different name."))
-            case Right(v) => Future.successful(Redirect(routes.SignUpController.view())
-              .flashing("info" -> "Sign up successful!"))
-          }
+                case Left(_) =>
+                  Future.successful(Redirect(routes.SignUpController.view())
+                    .flashing("warning" -> "User already exists. Please choose a different name."))
+                case Right(v) =>
+                  Future.successful(
+                    Redirect(routes.SignUpController.view())
+                      .flashing("info" -> "Sign up successful!"))
+              }
         } yield x
 
       }

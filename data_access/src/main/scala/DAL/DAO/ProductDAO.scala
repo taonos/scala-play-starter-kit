@@ -4,7 +4,7 @@ import DAL.DbContext
 import DAL.table.{ProductId, ProductTable}
 import javax.inject.{Inject, Singleton}
 import monix.eval.Task
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ProductDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
@@ -32,8 +32,7 @@ class ProductDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
   def insert(row: ProductTable): Future[ProductTable] =
     run(
       table.insert(lift(row))
-    )
-    .map(_ => row)
+    ).map(_ => row)
 
   def insertBatch(rows: Seq[ProductTable]): Future[Long] =
     Future.sequence(rows.map(insert)).map(_.length)

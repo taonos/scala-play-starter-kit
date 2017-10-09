@@ -10,7 +10,7 @@ import com.mohiva.play.silhouette.api.actions.SecuredRequest
 import monix.execution.Scheduler.Implicits.global
 import org.webjars.play.WebJarsUtil
 import scala.concurrent.Future
-import Domain.repository.TestEnv
+import Domain.repository.DefaultEnv
 
 /**
   * This controller creates an `Action` to handle HTTP requests to the
@@ -18,12 +18,13 @@ import Domain.repository.TestEnv
   */
 @Singleton
 class HomeController @Inject()(cc: ControllerComponents,
-                               silhouette: Silhouette[TestEnv],
+                               silhouette: Silhouette[DefaultEnv],
                                accountRepo: AccountDAO,
                                productRepo: ProductDAO)(implicit
                                                         webJarsUtil: WebJarsUtil,
                                                         assets: AssetsFinder)
-    extends AbstractController(cc) with I18nSupport {
+    extends AbstractController(cc)
+    with I18nSupport {
 
   /**
     * Create an Action to render an HTML page with a welcome message.
@@ -47,8 +48,9 @@ class HomeController @Inject()(cc: ControllerComponents,
     *
     * @return The result to display.
     */
-  def index = silhouette.SecuredAction.async { implicit request: SecuredRequest[TestEnv, AnyContent] =>
-    Future.successful(Ok(views.html.home(request.identity)))
+  def index = silhouette.SecuredAction.async {
+    implicit request: SecuredRequest[DefaultEnv, AnyContent] =>
+      Future.successful(Ok(views.html.home(request.identity)))
   }
 
   /**
@@ -56,9 +58,10 @@ class HomeController @Inject()(cc: ControllerComponents,
     *
     * @return The result to display.
     */
-  def signOut = silhouette.SecuredAction.async { implicit request: SecuredRequest[TestEnv, AnyContent] =>
-    val result = Redirect(routes.HomeController.index())
-    silhouette.env.eventBus.publish(LogoutEvent(request.identity, request))
-    silhouette.env.authenticatorService.discard(request.authenticator, result)
+  def signOut = silhouette.SecuredAction.async {
+    implicit request: SecuredRequest[DefaultEnv, AnyContent] =>
+      val result = Redirect(routes.HomeController.index())
+      silhouette.env.eventBus.publish(LogoutEvent(request.identity, request))
+      silhouette.env.authenticatorService.discard(request.authenticator, result)
   }
 }

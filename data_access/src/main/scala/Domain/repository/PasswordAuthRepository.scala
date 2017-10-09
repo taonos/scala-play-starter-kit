@@ -5,7 +5,7 @@ import javax.inject.Inject
 
 import DAL.DAO.{AccountDAO, CredentialDAO}
 import DAL.DbContext
-import DAL.table.{CredentialTable, AccountTable, AccountUsername}
+import DAL.table.{AccountTable, AccountUsername, CredentialTable}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
@@ -20,7 +20,7 @@ class PasswordAuthRepository @Inject()(val ctx: DbContext,
   import ctx._
   import PasswordAuthRepository._
 
-  val table  = quote(querySchema[AccountTable]("account"))
+  val table = quote(querySchema[AccountTable]("account"))
   val ctable = quote(querySchema[CredentialTable]("credential"))
 
   /**

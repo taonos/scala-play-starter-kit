@@ -11,7 +11,12 @@ package Domain {
     import Domain.repository._
     import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
     import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-    import com.mohiva.play.silhouette.api.util.{Clock, Credentials, PasswordHasherRegistry, PasswordInfo}
+    import com.mohiva.play.silhouette.api.util.{
+      Clock,
+      Credentials,
+      PasswordHasherRegistry,
+      PasswordInfo
+    }
     import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
     import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
     import play.api.mvc.AnyContent
@@ -61,8 +66,9 @@ package Domain {
     import Domain.entity.UserId
     import play.api.mvc.Request
 
-    final case class RememberMeConfig(cookieMaxAge: FiniteDuration, authenticatorIdleTimeout: FiniteDuration, authenticatorExpiry: FiniteDuration)
-
+    final case class RememberMeConfig(cookieMaxAge: FiniteDuration,
+                                      authenticatorIdleTimeout: FiniteDuration,
+                                      authenticatorExpiry: FiniteDuration)
 
   }
 
@@ -83,21 +89,23 @@ package Domain {
     import shapeless.tag
     import tag._
 
-    import scala.concurrent.{Future, ExecutionContext}
+    import scala.concurrent.{ExecutionContext, Future}
 
-    trait TestEnv extends Env {
+    trait DefaultEnv extends Env {
       type I = User
       type A = CookieAuthenticator
     }
 
     @Singleton
-    class AccountEventBus @Inject()(silhouette: Silhouette[TestEnv]) {
+    class AccountEventBus @Inject()(silhouette: Silhouette[DefaultEnv]) {
+
       def publishSignUpEvent[I <: Identity](identity: I,
                                             request: play.api.mvc.RequestHeader): Future[Unit] = {
         Future.successful(silhouette.env.eventBus.publish(SignUpEvent(identity, request)))
       }
 
-      def publishSignInEvent[I <: Identity](identity: I, request: Request[AnyContent]): Future[Unit] = {
+      def publishSignInEvent[I <: Identity](identity: I,
+                                            request: Request[AnyContent]): Future[Unit] = {
         Future.successful(silhouette.env.eventBus.publish(LoginEvent(identity, request)))
       }
     }
@@ -106,7 +114,10 @@ package Domain {
     class UserRepository {}
 
     @Singleton
-    class AccountRepository @Inject()(val ctx: DbContext, accountDAO: AccountDAO, credentialDAO: CredentialDAO)(implicit ec: ExecutionContext) extends IdentityService[User] {
+    class AccountRepository @Inject()(val ctx: DbContext,
+                                      accountDAO: AccountDAO,
+                                      credentialDAO: CredentialDAO)(implicit ec: ExecutionContext)
+        extends IdentityService[User] {
       import AccountRepository._
       import ctx._
 
@@ -136,25 +147,28 @@ package Domain {
                      lastname: String,
                      passwordInfo: PasswordInfo,
                      loginInfo: LoginInfo): Future[User] = {
-        ctx.transaction[AccountTable] { implicit c =>
-          for {
-            c <- credentialDAO.insert(CredentialTable(
-              CredentialId(UUID.randomUUID()),
-              passwordInfo.hasher,
-              passwordInfo.password,
-              passwordInfo.salt
-            ))
-            a <- accountDAO.insert(AccountTable(
-              AccountId(UUID.randomUUID()),
-              AccountUsername(username),
-              email,
-              firstname,
-              lastname,
-              Some(c.id)
-            ))
-          } yield a
+        ctx
+          .transaction[AccountTable] { implicit c =>
+            for {
+              c <- credentialDAO.insert(
+                    CredentialTable(
+                      CredentialId(UUID.randomUUID()),
+                      passwordInfo.hasher,
+                      passwordInfo.password,
+                      passwordInfo.salt
+                    ))
+              a <- accountDAO.insert(
+                    AccountTable(
+                      AccountId(UUID.randomUUID()),
+                      AccountUsername(username),
+                      email,
+                      firstname,
+                      lastname,
+                      Some(c.id)
+                    ))
+            } yield a
 
-        }
+          }
           .map(accountTableToUser)
       }
 
@@ -239,8 +253,6 @@ package Domain {
     final case class Login(provider: Provider, providerKey: String)
 
 //    final case class Account()
-
-
 
   }
 }

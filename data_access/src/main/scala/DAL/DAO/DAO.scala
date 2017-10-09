@@ -1,5 +1,3 @@
 package DAL.DAO
 
-trait DAO {
-
-}
+trait DAO {}

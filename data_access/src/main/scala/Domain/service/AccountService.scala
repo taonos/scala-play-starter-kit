@@ -3,7 +3,7 @@ package Domain.service
 import javax.inject.{Inject, Singleton}
 
 import Domain.entity.User
-import Domain.repository.{AccountEventBus, AccountRepository, AuthTokenRepository, TestEnv}
+import Domain.repository.{AccountEventBus, AccountRepository, AuthTokenRepository, DefaultEnv}
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -32,7 +32,7 @@ import scala.concurrent.Future
   */
 @Singleton
 class AccountService @Inject()(accountRepo: AccountRepository,
-                               silhouette: Silhouette[TestEnv],
+                               silhouette: Silhouette[DefaultEnv],
                                passwordHasherRegistry: PasswordHasherRegistry,
                                authInfoRepo: AuthInfoRepository,
                                authTokenRepo: AuthTokenRepository,
@@ -49,24 +49,24 @@ class AccountService @Inject()(accountRepo: AccountRepository,
     val credentials = Credentials(email, password)
 
     val res = for {
-      loginInfo     <- credentialsProvider.authenticate(credentials)
-      user <- accountRepo.retrieve(loginInfo).flatMap  {
-        case None    => Future.failed(new IdentityNotFoundException("User not found!"))
-        case Some(v) => Future.successful(v)
-      }
+      loginInfo <- credentialsProvider.authenticate(credentials)
+      user <- accountRepo.retrieve(loginInfo).flatMap {
+               case None    => Future.failed(new IdentityNotFoundException("User not found!"))
+               case Some(v) => Future.successful(v)
+             }
       cookieAuth <- silhouette.env.authenticatorService
-        .create(loginInfo)
-        .map {
-          case authenticator if rememberMe =>
-            authenticator.copy(
-              expirationDateTime = clock.now + rememberMeConfig.authenticatorExpiry,
-              idleTimeout = Some(rememberMeConfig.authenticatorIdleTimeout),
-              cookieMaxAge = Some(rememberMeConfig.cookieMaxAge)
-            )
-          case authenticator => authenticator
-        }
-      _          <- accountEventBus.publishSignInEvent(user, request)
-      cookie     <- silhouette.env.authenticatorService.init(cookieAuth)
+                     .create(loginInfo)
+                     .map {
+                       case authenticator if rememberMe =>
+                         authenticator.copy(
+                           expirationDateTime = clock.now + rememberMeConfig.authenticatorExpiry,
+                           idleTimeout = Some(rememberMeConfig.authenticatorIdleTimeout),
+                           cookieMaxAge = Some(rememberMeConfig.cookieMaxAge)
+                         )
+                       case authenticator => authenticator
+                     }
+      _ <- accountEventBus.publishSignInEvent(user, request)
+      cookie <- silhouette.env.authenticatorService.init(cookieAuth)
       authResult <- silhouette.env.authenticatorService.embed(cookie, response)
     } yield Authenticated(authResult)
 
@@ -133,27 +133,27 @@ class AccountService @Inject()(accountRepo: AccountRepository,
 
     for {
       userRetrieved <- accountRepo
-        .retrieve(loginInfo)
+                        .retrieve(loginInfo)
       result <- userRetrieved match {
-        // account is already registered within the system
-        case Some(_) => Future.successful(Left(UserAlreadyExists))
+                 // account is already registered within the system
+                 case Some(_) => Future.successful(Left(UserAlreadyExists))
 
-        // save account info
-        case None =>
-          val passwordInfo = passwordHasherRegistry.current.hash(password)
+                 // save account info
+                 case None =>
+                   val passwordInfo = passwordHasherRegistry.current.hash(password)
 
-          for {
-            account <- accountRepo.createUser(username,
-                                              email,
-                                              firstname,
-                                              lastname,
-                                              passwordInfo,
-                                              loginInfo)
-            authInfo  <- authInfoRepo.add(loginInfo, passwordInfo)
-            authToken <- authTokenRepo.create(account.id).runAsync
-            _         <- accountEventBus.publishSignUpEvent(account, request)
-          } yield Right(account)
-      }
+                   for {
+                     account <- accountRepo.createUser(username,
+                                                       email,
+                                                       firstname,
+                                                       lastname,
+                                                       passwordInfo,
+                                                       loginInfo)
+                     authInfo <- authInfoRepo.add(loginInfo, passwordInfo)
+                     authToken <- authTokenRepo.create(account.id).runAsync
+                     _ <- accountEventBus.publishSignUpEvent(account, request)
+                   } yield Right(account)
+               }
     } yield result
 
   }
@@ -168,6 +168,6 @@ object AccountService {
 
   sealed trait SignInStatus
   final case class Authenticated(result: AuthenticatorResult) extends SignInStatus
-  case object UserNotExist                              extends SignInStatus
-  case object InvalidPassword                           extends SignInStatus
+  case object UserNotExist extends SignInStatus
+  case object InvalidPassword extends SignInStatus
 }

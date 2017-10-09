@@ -8,9 +8,9 @@ import monix.eval.Task
 import org.joda.time.DateTime
 
 @Singleton
-class AuthTokenDAO @Inject() (val ctx: DbContext) extends DAOCrudWithPk[Task, AuthTokenTable, AuthTokenId] {
+class AuthTokenDAO @Inject()(val ctx: DbContext)
+    extends DAOCrudWithPk[Task, AuthTokenTable, AuthTokenId] {
   import ctx._
-
 
   private implicit val updateExclusion =
     updateMeta[AuthTokenTable](_.id, _.createdAt)
@@ -29,16 +29,19 @@ class AuthTokenDAO @Inject() (val ctx: DbContext) extends DAOCrudWithPk[Task, Au
     * @return The found token or None if no token for the given ID could be found.
     */
   override def findByPk(pk: AuthTokenId): Task[Option[AuthTokenTable]] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table
-        .filter(_.id == lift(pk)))
-    }
+    Task
+      .deferFutureAction { implicit scheduler =>
+        run(
+          table
+            .filter(_.id == lift(pk)))
+      }
       .map(_.headOption)
 
   override def insert(row: AuthTokenTable): Task[AuthTokenTable] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table.insert(lift(row)))
-    }
+    Task
+      .deferFutureAction { implicit scheduler =>
+        run(table.insert(lift(row)))
+      }
       .map(_ => row)
 
   override def insertBatch(rows: Seq[AuthTokenTable]): Task[Long] = ???
@@ -54,10 +57,11 @@ class AuthTokenDAO @Inject() (val ctx: DbContext) extends DAOCrudWithPk[Task, Au
     * @return A task
     */
   override def deleteByPk(pk: AuthTokenId): Task[Unit] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table.filter(_.id == lift(pk)).delete)
-    }
-    .map(_ => ())
+    Task
+      .deferFutureAction { implicit scheduler =>
+        run(table.filter(_.id == lift(pk)).delete)
+      }
+      .map(_ => ())
 
   /**
     * Finds expired tokens.

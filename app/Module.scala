@@ -1,7 +1,12 @@
 import com.google.inject.{AbstractModule, Provides, TypeLiteral}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{PasswordHasherRegistry, PasswordInfo}
-import com.mohiva.play.silhouette.crypto.{JcaCrypter, JcaCrypterSettings, JcaSigner, JcaSignerSettings}
+import com.mohiva.play.silhouette.crypto.{
+  JcaCrypter,
+  JcaCrypterSettings,
+  JcaSigner,
+  JcaSignerSettings
+}
 import com.mohiva.play.silhouette.impl.providers.{OAuth1Info, OAuth2Info, OpenIDInfo}
 import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}
 import com.mohiva.play.silhouette.password.{BCryptPasswordHasher, BCryptSha256PasswordHasher}
@@ -15,11 +20,17 @@ import com.mohiva.play.silhouette.api.crypto.{Crypter, CrypterAuthenticatorEncod
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.api.util.{Clock, FingerprintGenerator, IDGenerator}
 import com.mohiva.play.silhouette.api.{Environment, EventBus, Silhouette, SilhouetteProvider}
-import com.mohiva.play.silhouette.impl.authenticators.{CookieAuthenticator, CookieAuthenticatorService, CookieAuthenticatorSettings}
+import com.mohiva.play.silhouette.impl.authenticators.{
+  CookieAuthenticator,
+  CookieAuthenticatorService,
+  CookieAuthenticatorSettings
+}
 import Domain.service.RememberMeConfig
 import play.api.Configuration
 import play.api.mvc.CookieHeaderEncoding
 import pureconfig._
+import util.ExecutionContextFactory
+import scala.concurrent.ExecutionContext
 
 /**
   * This class is a Guice module that tells Guice how to bind several
@@ -32,8 +43,7 @@ import pureconfig._
   * configuration file.
   */
 class Module extends AbstractModule {
-  import Domain.repository.TestEnv
-  import scala.concurrent.ExecutionContext.Implicits.global
+  import Domain.repository.DefaultEnv
   import Module._
 
   override def configure() = {
@@ -46,9 +56,8 @@ class Module extends AbstractModule {
     // Set AtomicCounter as the implementation for Counter.
 //    bind(classOf[Counter]).to(classOf[AtomicCounter])
 
-    bind(new TypeLiteral[Silhouette[TestEnv]] {})
-      .to(new TypeLiteral[SilhouetteProvider[TestEnv]] {})
-    bind(classOf[IDGenerator]).toInstance(new SecureRandomIDGenerator())
+    bind(new TypeLiteral[Silhouette[DefaultEnv]] {})
+      .to(new TypeLiteral[SilhouetteProvider[DefaultEnv]] {})
     bind(classOf[FingerprintGenerator]).toInstance(new DefaultFingerprintGenerator(false))
     bind(classOf[com.mohiva.play.silhouette.api.util.Clock])
       .toInstance(com.mohiva.play.silhouette.api.util.Clock())
@@ -56,6 +65,16 @@ class Module extends AbstractModule {
     bind(classOf[EventBus])
 
     ()
+  }
+
+  @Provides
+  @Named("cpu-execution-context")
+  def provideCPUExecutionContext: ExecutionContext = ExecutionContextFactory.cpuExecutionContext
+
+  @Provides
+  def provideIDGenerator(
+      implicit @Named("cpu-execution-context") ec: ExecutionContext): IDGenerator = {
+    new SecureRandomIDGenerator()
   }
 
   /**
@@ -69,15 +88,17 @@ class Module extends AbstractModule {
   @Provides
   def provideEnvironment(userRepo: AccountRepository,
                          authenticatorService: AuthenticatorService[CookieAuthenticator],
-                         eventBus: EventBus): Environment[TestEnv] = {
+                         eventBus: EventBus)(
+      implicit @Named("cpu-execution-context") ec: ExecutionContext): Environment[DefaultEnv] = {
 
-    Environment[TestEnv](
+    Environment[DefaultEnv](
       userRepo,
       authenticatorService,
       Seq(),
       eventBus
     )
   }
+
   @Provides
   def provideDelegate(): DelegableAuthInfoDAO[PasswordInfo] = {
     new InMemoryAuthInfoDAO[PasswordInfo]
@@ -98,7 +119,7 @@ class Module extends AbstractModule {
   def provideAuthInfoRepository(
       passwordInfoDAO: DelegableAuthInfoDAO[PasswordInfo],
       oauth2InfoDAO: DelegableAuthInfoDAO[OAuth2Info]
-  ): AuthInfoRepository = {
+  )(implicit @Named("cpu-execution-context") ec: ExecutionContext): AuthInfoRepository = {
 
     new DelegableAuthInfoRepository(passwordInfoDAO, oauth2InfoDAO)
   }
@@ -127,6 +148,11 @@ class Module extends AbstractModule {
 
     new JcaSigner(config)
   }
+
+//  @Provides
+//  @Named("i/o execution context")
+//  def provideIOExecutionContext: ExecutionContext =
+//    ExecutionContextFactory.ioExecutionContext
 
   /**
     * Provides the crypter for the authenticator.
@@ -157,15 +183,17 @@ class Module extends AbstractModule {
     */
   @Provides
   @throws[ConfigReaderException[_]]
-  def provideAuthenticatorService(@Named("authenticator-signer") signer: Signer,
-                                  @Named("authenticator-crypter") crypter: Crypter,
-                                  cookieHeaderEncoding: CookieHeaderEncoding,
-                                  fingerprintGenerator: FingerprintGenerator,
-                                  idGenerator: IDGenerator,
-                                  configuration: Configuration,
-                                  clock: Clock): AuthenticatorService[CookieAuthenticator] = {
+  def provideAuthenticatorService(
+      @Named("authenticator-signer") signer: Signer,
+      @Named("authenticator-crypter") crypter: Crypter,
+      cookieHeaderEncoding: CookieHeaderEncoding,
+      fingerprintGenerator: FingerprintGenerator,
+      idGenerator: IDGenerator,
+      configuration: Configuration,
+      clock: Clock)(implicit @Named("cpu-execution-context") ec: ExecutionContext)
+    : AuthenticatorService[CookieAuthenticator] = {
 
-    val config               = loadConfigOrThrow[CookieAuthenticatorSettings]("silhouette.authenticator")
+    val config = loadConfigOrThrow[CookieAuthenticatorSettings]("silhouette.authenticator")
     val authenticatorEncoder = new CrypterAuthenticatorEncoder(crypter)
 
     new CookieAuthenticatorService(config,

@@ -24,13 +24,21 @@ object Dependencies {
 
     object Silhouette extends Entirety {
       val core: ModuleID = "com.mohiva" %% "play-silhouette" % Version.silhouette
-      val passwordBcrypt: ModuleID = "com.mohiva" %% "play-silhouette-password-bcrypt" % Version.silhouette
+
+      val passwordBcrypt
+        : ModuleID = "com.mohiva" %% "play-silhouette-password-bcrypt" % Version.silhouette
       val persistence: ModuleID = "com.mohiva" %% "play-silhouette-persistence" % Version.silhouette
       val cryptoJca: ModuleID = "com.mohiva" %% "play-silhouette-crypto-jca" % Version.silhouette
-      val testkit: ModuleID = "com.mohiva" %% "play-silhouette-testkit" % Version.silhouette % "test"
+
+      val testkit
+        : ModuleID = "com.mohiva" %% "play-silhouette-testkit" % Version.silhouette % "test"
 
       override val toSeq: Seq[ModuleID] = Seq(
-        core, passwordBcrypt, persistence, cryptoJca, testkit
+        core,
+        passwordBcrypt,
+        persistence,
+        cryptoJca,
+        testkit
       )
     }
 
@@ -41,7 +49,10 @@ object Dependencies {
       val optics: ModuleID = "io.circe" %% "circe-optics" % Version.circe
 
       override val toSeq: Seq[ModuleID] = Seq(
-        core, generic, parser, optics
+        core,
+        generic,
+        parser,
+        optics
       )
     }
 
@@ -50,21 +61,22 @@ object Dependencies {
       val circe: ModuleID = "com.beachape" %% "enumeratum-circe" % "1.5.14"
 
       override val toSeq: Seq[ModuleID] = Seq(
-        core, circe
+        core,
+        circe
       )
     }
 
     object Shapeless {
-      val core: ModuleID = "com.chuusai"   %% "shapeless"   % "2.3.2"
+      val core: ModuleID = "com.chuusai" %% "shapeless" % "2.3.2"
     }
 
     object Cats {
-      val core: ModuleID = "org.typelevel" %% "cats-core"   % "0.9.0"
+      val core: ModuleID = "org.typelevel" %% "cats-core" % "0.9.0"
     }
 
     object FlywayDB {
       val core: ModuleID = "org.flywaydb" % "flyway-core" % "4.2.0"
-      val play: ModuleID = "org.flywaydb"  %% "flyway-play" % "4.0.0"
+      val play: ModuleID = "org.flywaydb" %% "flyway-play" % "4.0.0"
     }
 
     object Monix extends Entirety {
@@ -89,7 +101,9 @@ object Dependencies {
     object WebJars extends Entirety {
 
       val play: ModuleID = "org.webjars" %% "webjars-play" % "2.6.1"
-      val bootstrap: ModuleID = "org.webjars" % "bootstrap" % "3.3.7-1" exclude("org.webjars", "jquery")
+
+      val bootstrap
+        : ModuleID = "org.webjars" % "bootstrap" % "3.3.7-1" exclude ("org.webjars", "jquery")
       val jquery: ModuleID = "org.webjars" % "jquery" % "3.2.1"
 
       override val toSeq: Seq[ModuleID] = Seq(play, bootstrap, jquery)

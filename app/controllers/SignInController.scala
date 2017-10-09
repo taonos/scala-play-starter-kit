@@ -16,7 +16,7 @@ import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, Reque
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
-import Domain.repository.TestEnv
+import Domain.repository.DefaultEnv
 import AccountService._
 
 /**
@@ -31,7 +31,7 @@ import AccountService._
 @Singleton
 class SignInController @Inject()(
     components: ControllerComponents,
-    silhouette: Silhouette[TestEnv],
+    silhouette: Silhouette[DefaultEnv],
     accountService: AccountService,
 )(
     implicit
@@ -40,7 +40,6 @@ class SignInController @Inject()(
 //                                   ex: ExecutionContext
 ) extends AbstractController(components)
     with I18nSupport {
-
 
   /**
     * Views the `Sign In` page.
@@ -65,10 +64,12 @@ class SignInController @Inject()(
           .signIn(data.email, data.password, data.rememberMe, result)
           .map {
             case Authenticated(r) => r
-            case UserNotExist => Redirect(routes.SignInController.view())
-              .flashing("error" -> "User not found")
-            case InvalidPassword => Redirect(routes.SignInController.view())
-              .flashing("error" -> "Invalid password")
+            case UserNotExist =>
+              Redirect(routes.SignInController.view())
+                .flashing("error" -> "User not found")
+            case InvalidPassword =>
+              Redirect(routes.SignInController.view())
+                .flashing("error" -> "Invalid password")
           }
       }
     )
