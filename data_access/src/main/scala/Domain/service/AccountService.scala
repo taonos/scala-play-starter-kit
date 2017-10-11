@@ -14,8 +14,57 @@ import com.mohiva.play.silhouette.impl.exceptions.{
 }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import play.api.mvc.{AnyContent, Request, Result}
+import scala.concurrent.{ExecutionContext, Future}
 
-import scala.concurrent.Future
+@Singleton
+class AccountManager @Inject()(accountRepo: AccountRepository,
+                               silhouette: Silhouette[DefaultEnv],
+                               passwordHasherRegistry: PasswordHasherRegistry,
+                               authInfoRepo: AuthInfoRepository,
+                               authTokenRepo: AuthTokenRepository,
+                               credentialsProvider: CredentialsProvider,
+                               clock: Clock,
+                               accountEventBus: AccountEventBus,
+                               rememberMeConfig: RememberMeConfig) {
+
+  import Domain.entity.command.UserRegistrationByPassword
+  import Domain.entity.AccountStatus
+  import AccountStatus._
+
+  def register(command: UserRegistrationByPassword)(
+      implicit ec: ExecutionContext,
+      request: play.api.mvc.RequestHeader): Future[AccountStatus] = {
+
+    val loginInfo = LoginInfo(credentialsProvider.id, command.email)
+
+    for {
+      userRetrieved <- accountRepo
+                        .retrieve(loginInfo)
+      result <- userRetrieved match {
+                 // account is already registered within the system
+                 case Some(_) => Future.successful(AlreadyExists)
+
+                 // save account info
+                 case None =>
+                   val passwordInfo = passwordHasherRegistry.current.hash(command.password)
+
+                   for {
+                     account <- accountRepo.createUser(command.username,
+                                                       command.email,
+                                                       command.firstname,
+                                                       command.lastname,
+                                                       passwordInfo,
+                                                       loginInfo)
+                     authInfo <- authInfoRepo.add(loginInfo, passwordInfo)
+                     authToken <- authTokenRepo.create(account.id)
+                     // FIXME: something wrong with event bus???
+                     //                     _ <- accountEventBus.publishSignUpEvent(account, request)
+                   } yield Registered(account)
+               }
+    } yield result
+
+  }
+}
 
 /**
   * Handles actions to users.
@@ -40,12 +89,11 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                                clock: Clock,
                                accountEventBus: AccountEventBus,
                                rememberMeConfig: RememberMeConfig) {
-
-  import monix.execution.Scheduler.Implicits.global
   import AccountService._
 
   def signIn(email: String, password: String, rememberMe: Boolean, response: Result)(
-      implicit request: Request[AnyContent]): Future[SignInStatus] = {
+      implicit ec: ExecutionContext,
+      request: Request[AnyContent]): Future[SignInStatus] = {
     val credentials = Credentials(email, password)
 
     val res = for {
@@ -73,7 +121,7 @@ class AccountService @Inject()(accountRepo: AccountRepository,
     res
       .recover {
         case _: InvalidPasswordException  => InvalidPassword
-        case _: IdentityNotFoundException => UserNotExist
+        case _: IdentityNotFoundException => UserNotFound
       }
 
 //    credentialsProvider
@@ -103,7 +151,7 @@ class AccountService @Inject()(accountRepo: AccountRepository,
 //            }
 //
 //
-//        case (_, None) => Future.successful(UserNotExist)
+//        case (_, None) => Future.successful(UserNotFound)
 //      }
 //      .recover {
 //        case _: InvalidPasswordException => InvalidPassword
@@ -116,27 +164,17 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                firstname: String,
                lastname: String,
                password: String)(
-      implicit request: play.api.mvc.RequestHeader): Future[Either[RegistrationStatus, User]] = {
-    val loginInfo = LoginInfo(CredentialsProvider.ID, email)
+      implicit ec: ExecutionContext,
+      request: play.api.mvc.RequestHeader): Future[RegistrationStatus] = {
 
-    //        val e: Future[Either[RegistrationStatus, User]] = accountRepo
-    //          .retrieve(loginInfo)
-    //          .flatMap { userRetrieved =>
-    //
-    //            userRetrieved match {
-    //              case None => ???
-    //              case Some(_) => Left(UserAlreadyExists)
-    //            }
-    //
-    //            ???
-    //          }
+    val loginInfo = LoginInfo(CredentialsProvider.ID, email)
 
     for {
       userRetrieved <- accountRepo
                         .retrieve(loginInfo)
       result <- userRetrieved match {
                  // account is already registered within the system
-                 case Some(_) => Future.successful(Left(UserAlreadyExists))
+                 case Some(_) => Future.successful(UserAlreadyExists)
 
                  // save account info
                  case None =>
@@ -150,9 +188,10 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                                                        passwordInfo,
                                                        loginInfo)
                      authInfo <- authInfoRepo.add(loginInfo, passwordInfo)
-                     authToken <- authTokenRepo.create(account.id).runAsync
-                     _ <- accountEventBus.publishSignUpEvent(account, request)
-                   } yield Right(account)
+                     authToken <- authTokenRepo.create(account.id)
+                     // FIXME: something wrong with event bus???
+//                     _ <- accountEventBus.publishSignUpEvent(account, request)
+                   } yield RegistrationSucceed(account)
                }
     } yield result
 
@@ -165,9 +204,10 @@ object AccountService {
 
   sealed trait RegistrationStatus
   case object UserAlreadyExists extends RegistrationStatus
+  final case class RegistrationSucceed(user: User) extends RegistrationStatus
 
   sealed trait SignInStatus
   final case class Authenticated(result: AuthenticatorResult) extends SignInStatus
-  case object UserNotExist extends SignInStatus
+  case object UserNotFound extends SignInStatus
   case object InvalidPassword extends SignInStatus
 }

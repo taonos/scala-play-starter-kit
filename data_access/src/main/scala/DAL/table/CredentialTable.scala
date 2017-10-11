@@ -5,7 +5,7 @@ import java.util.UUID
 import DAL.DAO.{PK, TableWithPK}
 import io.getquill.Embedded
 
-final case class CredentialId(value: UUID) extends PK
+final case class CredentialId(value: UUID = UUID.randomUUID()) extends PK
 
 object CredentialId {
 
@@ -17,15 +17,15 @@ object CredentialId {
 
 /**
   *
-  * @param id A unique identifier.
   * @param hasher
   * @param hashedPassword
   * @param salt
+  * @param id A unique identifier.
   */
-final case class CredentialTable(id: CredentialId,
-                                 hasher: String,
+final case class CredentialTable(hasher: String,
                                  hashedPassword: String,
-                                 salt: Option[String])
+                                 salt: Option[String],
+                                 id: CredentialId = new CredentialId)
     extends TableWithPK[CredentialId]
     with Timestamped {
   val pk: CredentialId = id

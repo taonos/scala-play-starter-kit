@@ -1,31 +1,23 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
+
 import com.mohiva.play.silhouette.api._
-import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.util.{PasswordHasherRegistry, PasswordInfo}
-import com.mohiva.play.silhouette.impl.providers._
 import org.webjars.play.WebJarsUtil
-import play.api.i18n.{I18nSupport, Messages, MessagesApi}
+import play.api.i18n.I18nSupport
 import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, Request}
-import Domain.entity._
 import Domain.service.AccountService
+import Domain.service.AccountService.{RegistrationSucceed, UserAlreadyExists}
 import forms.SignUpForm
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-
-/**
-  * The default env.
-  */
-import Domain.service.AuthTokenService
 
 /**
   * The `Sign Up` controller.
   *
   * @param components             The Play controller components.
   * @param silhouette             The Silhouette stack.
-  * @param accountService            The user service implementation.
+  * @param accountService         The user service implementation.
+  * @param ec                     The execution context.
   * @param webJarsUtil            The webjar util.
   * @param assets                 The Play assets finder.
   */
@@ -35,13 +27,11 @@ class SignUpController @Inject()(
     silhouette: Silhouette[Domain.repository.DefaultEnv],
     accountService: AccountService
 )(
-    implicit
+    implicit ec: ExecutionContext,
     webJarsUtil: WebJarsUtil,
     assets: AssetsFinder
 ) extends AbstractController(components)
     with I18nSupport {
-
-  import monix.execution.Scheduler.Implicits.global
 
   /**
     * Views the `Sign Up` page.
@@ -62,21 +52,23 @@ class SignUpController @Inject()(
       form => Future.successful(BadRequest(views.html.signUp(form))),
       data => {
         for {
-          r <- accountService.register(data.firstName + " " + data.lastName,
-                                       data.email,
-                                       data.firstName,
-                                       data.lastName,
-                                       data.password)
-          x <- r match {
-                case Left(_) =>
-                  Future.successful(Redirect(routes.SignUpController.view())
-                    .flashing("warning" -> "User already exists. Please choose a different name."))
-                case Right(v) =>
-                  Future.successful(
-                    Redirect(routes.SignUpController.view())
-                      .flashing("info" -> "Sign up successful!"))
-              }
-        } yield x
+          registration <- accountService.register(data.firstName + " " + data.lastName,
+                                                  data.email,
+                                                  data.firstName,
+                                                  data.lastName,
+                                                  data.password)
+          res <- registration match {
+                  case UserAlreadyExists =>
+                    Future.successful(
+                      Redirect(routes.SignUpController.view())
+                        .flashing(
+                          "warning" -> "User already exists. Please choose a different name."))
+                  case RegistrationSucceed(_) =>
+                    Future.successful(
+                      Redirect(routes.SignUpController.view())
+                        .flashing("info" -> "Sign up successful!"))
+                }
+        } yield res
 
       }
     )

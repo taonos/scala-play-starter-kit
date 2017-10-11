@@ -1,7 +1,7 @@
 package DAL
 
 import javax.inject.{Inject, Singleton}
-import io.getquill.context.async.{SqlTypes, TransactionalExecutionContext, AsyncContext}
+import io.getquill.context.async.{AsyncContext, SqlTypes, TransactionalExecutionContext}
 import io.getquill.{ImplicitQuery, PostgresAsyncContext, PostgresEscape, SnakeCase}
 import monix.eval.Task
 import org.joda.time.{DateTime => JodaDateTime}

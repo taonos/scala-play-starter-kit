@@ -152,7 +152,6 @@ package Domain {
             for {
               c <- credentialDAO.insert(
                     CredentialTable(
-                      CredentialId(UUID.randomUUID()),
                       passwordInfo.hasher,
                       passwordInfo.password,
                       passwordInfo.salt
@@ -199,7 +198,8 @@ package Domain {
         * @param expiry The duration a token expires.
         * @return The saved auth token.
         */
-      def create(userID: UUID @@ UserId, expiry: FiniteDuration = 5.minutes) = {
+      def create(userID: UUID @@ UserId,
+                 expiry: FiniteDuration = 5.minutes): Future[AuthTokenTable] = {
         val token = AuthToken(
           tag[entity.AuthTokenId][UUID](UUID.randomUUID()),
           userID,

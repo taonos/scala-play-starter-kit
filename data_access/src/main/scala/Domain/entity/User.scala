@@ -1,7 +1,6 @@
 package Domain.entity
 
 import java.util.UUID
-
 import com.mohiva.play.silhouette.api.Identity
 import shapeless.tag.@@
 

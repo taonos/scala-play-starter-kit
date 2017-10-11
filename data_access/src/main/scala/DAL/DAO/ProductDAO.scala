@@ -3,7 +3,6 @@ package DAL.DAO
 import DAL.DbContext
 import DAL.table.{ProductId, ProductTable}
 import javax.inject.{Inject, Singleton}
-import monix.eval.Task
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -15,18 +14,13 @@ class ProductDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
 
   val table = quote(querySchema[ProductTable]("product"))
 
-  def findAll: Task[Seq[ProductTable]] =
-    Task.deferFutureAction { implicit scheduler =>
-      run(table)
-    }
+  def findAll: Future[Seq[ProductTable]] =
+    run(table)
 
-  def findByPk(pk: ProductId): Task[Option[ProductTable]] =
-    Task
-      .deferFutureAction { implicit scheduler =>
-        run(
-          table
-            .filter(_.id == lift(pk)))
-      }
+  def findBy(pk: ProductId): Future[Option[ProductTable]] =
+    run(
+      table
+        .filter(_.id == lift(pk)))
       .map(_.headOption)
 
   def insert(row: ProductTable): Future[ProductTable] =
@@ -43,27 +37,17 @@ class ProductDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
 //    }
 //      .map(_.length)
 
-  def update(row: ProductTable): Task[ProductTable] =
-    Task
-      .deferFutureAction { implicit scheduler =>
-        run(table.update(lift(row)))
-      }
+  def update(row: ProductTable): Future[ProductTable] =
+    run(table.update(lift(row)))
       .map(_ => row)
 
-  def updateBatch(rows: Seq[ProductTable]): Task[Long] =
-    Task
-      .deferFutureAction { implicit scheduler =>
-        run(quote {
-          liftQuery(rows).foreach(v => table.update(v))
-        })
-      }
-      .map(_.length)
+  def updateBatch(rows: Seq[ProductTable]): Future[Long] =
+    run(quote {
+      liftQuery(rows).foreach(v => table.update(v))
+    }).map(_.length)
 
-  def deleteByPk(pk: ProductId): Task[Unit] =
-    Task
-      .deferFutureAction { implicit scheduler =>
-        run(table.filter(_.id == lift(pk)).delete)
-      }
+  def deleteByPk(pk: ProductId): Future[Unit] =
+    run(table.filter(_.id == lift(pk)).delete)
       .map(_ => ())
 
 //  def insertBatch(products: Seq[ProductTable]): Task[Long] =

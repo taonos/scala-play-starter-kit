@@ -1,3 +1,5 @@
+import DAL.DAO.{AccountDAO, CredentialDAO}
+import DAL.DbContext
 import com.google.inject.{AbstractModule, Provides, TypeLiteral}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{PasswordHasherRegistry, PasswordInfo}
@@ -30,6 +32,7 @@ import play.api.Configuration
 import play.api.mvc.CookieHeaderEncoding
 import pureconfig._
 import util.ExecutionContextFactory
+
 import scala.concurrent.ExecutionContext
 
 /**
@@ -100,28 +103,28 @@ class Module extends AbstractModule {
   }
 
   @Provides
-  def provideDelegate(): DelegableAuthInfoDAO[PasswordInfo] = {
-    new InMemoryAuthInfoDAO[PasswordInfo]
+  def provideDelegate(ctx: DbContext, accountDAO: AccountDAO, credentialDAO: CredentialDAO)(
+      implicit ec: ExecutionContext): DelegableAuthInfoDAO[PasswordInfo] = {
+    new CredentialRepository(ctx, accountDAO, credentialDAO)
   }
 
-  @Provides
-  def provideOAuth2InfoDelegableAuthInfoDAO: DelegableAuthInfoDAO[OAuth2Info] = {
-    new InMemoryAuthInfoDAO[OAuth2Info]
-  }
+//  @Provides
+//  def provideOAuth2InfoDelegableAuthInfoDAO: DelegableAuthInfoDAO[OAuth2Info] = {
+//    new InMemoryAuthInfoDAO[OAuth2Info]
+//  }
 
   /**
     * Provides the auth info repository.
     *
-    * @param passwordInfoDAO The implementation of the delegable password auth info DAO.
+    * @param credentialRepo The implementation of the delegable password auth info DAO.
     * @return The auth info repository instance.
     */
   @Provides
   def provideAuthInfoRepository(
-      passwordInfoDAO: DelegableAuthInfoDAO[PasswordInfo],
-      oauth2InfoDAO: DelegableAuthInfoDAO[OAuth2Info]
+      credentialRepo: DelegableAuthInfoDAO[PasswordInfo]
   )(implicit @Named("cpu-execution-context") ec: ExecutionContext): AuthInfoRepository = {
 
-    new DelegableAuthInfoRepository(passwordInfoDAO, oauth2InfoDAO)
+    new DelegableAuthInfoRepository(credentialRepo)
   }
 
   /**
