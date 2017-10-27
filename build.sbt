@@ -71,7 +71,8 @@ lazy val commonSettings = Seq(
     Set(
       "-Ywarn-unused:imports",
       "-Xfatal-warnings"
-    )))
+    )
+  ))
 )
 
 lazy val commonWartRemoverSettings = Seq(
@@ -115,12 +116,14 @@ lazy val dataAccessWartRemoverSettings = commonWartRemoverSettings
 
 lazy val populationDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql) ++ Monix.toSeq
 
-lazy val dataAccessDependencies = Seq(PostgreSQL.db,
-                                      Quill.asyncpostgresql,
-                                      JavaxInject.inject,
-                                      Shapeless.core,
-                                      JodaTime.core,
-                                      Enumeratum.core) ++ Monix.toSeq ++ Silhouette.toSeq
+lazy val dataAccessDependencies = Seq(
+  PostgreSQL.db,
+  Quill.asyncpostgresql,
+  JavaxInject.inject,
+  Shapeless.core,
+  JodaTime.core,
+  Enumeratum.core
+) ++ Monix.toSeq ++ Silhouette.toSeq
 
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
 

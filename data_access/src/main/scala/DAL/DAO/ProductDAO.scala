@@ -20,8 +20,8 @@ class ProductDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
   def findBy(pk: ProductId): Future[Option[ProductTable]] =
     run(
       table
-        .filter(_.id == lift(pk)))
-      .map(_.headOption)
+        .filter(_.id == lift(pk))
+    ).map(_.headOption)
 
   def insert(row: ProductTable): Future[ProductTable] =
     run(

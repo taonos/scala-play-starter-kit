@@ -28,8 +28,8 @@ class AuthTokenDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext)
   override def findByPk(pk: AuthTokenId): Future[Option[AuthTokenTable]] =
     run(
       table
-        .filter(_.id == lift(pk)))
-      .map(_.headOption)
+        .filter(_.id == lift(pk))
+    ).map(_.headOption)
 
   override def insert(row: AuthTokenTable): Future[AuthTokenTable] =
     run(table.insert(lift(row)))

@@ -20,8 +20,8 @@ class OwnershipDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) 
   def findByPk(pk: OwnershipId): Future[Option[OwnershipTable]] =
     run(
       table
-        .filter(v => v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId)))
-      .map(_.headOption)
+        .filter(v => v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId))
+    ).map(_.headOption)
 
   def insert(row: OwnershipTable): Future[OwnershipTable] =
     run(table.insert(lift(row)))
@@ -49,6 +49,6 @@ class OwnershipDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) 
     run(
       table
         .filter(v => v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId))
-        .delete)
-      .map(_ => ())
+        .delete
+    ).map(_ => ())
 }
