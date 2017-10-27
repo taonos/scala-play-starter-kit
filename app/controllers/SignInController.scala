@@ -58,7 +58,7 @@ class SignInController @Inject()(
             case Authenticated(r) => r
             case UserNotFound =>
               Redirect(routes.SignInController.view())
-                .flashing("error" -> "User not found")
+                .flashing("error" -> "Account not found")
             case InvalidPassword =>
               Redirect(routes.SignInController.view())
                 .flashing("error" -> "Invalid password")

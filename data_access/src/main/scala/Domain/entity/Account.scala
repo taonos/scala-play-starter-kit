@@ -2,26 +2,15 @@ package Domain.entity
 
 import java.util.UUID
 import com.mohiva.play.silhouette.api.Identity
-import shapeless.tag.@@
-
-sealed trait UserId
 
 /**
-  *
   *
   *
   * @param id
   * @param username
   * @param email
-  * @param firstname
-  * @param lastname
   */
-final case class User(id: UUID @@ UserId,
-                      username: String,
-                      email: String,
-                      firstname: String,
-                      lastname: String)
-    extends Identity
+final case class Account(id: UUID, username: String, email: String) extends Identity
 
 /**
   *

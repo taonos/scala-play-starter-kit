@@ -5,7 +5,7 @@
 @import DAL.table._
 @import Domain.entity._
 
-@(title: String, user: Option[User] = None)(content: Html)(implicit request: RequestHeader, assets: AssetsFinder, webJarsUtil: WebJarsUtil, messages: Messages)
+@(title: String, user: Option[Account] = None)(content: Html)(implicit request: RequestHeader, assets: AssetsFinder, webJarsUtil: WebJarsUtil, messages: Messages)
 
 <!DOCTYPE html>
 
@@ -47,7 +47,7 @@
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
                     @user.map { u =>
-                    <li><a href="@controllers.routes.HomeController.index">@u.firstname</a></li>
+                    @*<li><a href="@controllers.routes.HomeController.index">@u.firstname</a></li>*@
                     @*@if(u.loginInfo.providerID == com.mohiva.play.silhouette.impl.providers.CredentialsProvider.ID) {*@
                         @*<li><a href="@controllers.routes.ChangePasswordController.view">@messages("change.password")</a></li>*@
                     @*}*@

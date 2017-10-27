@@ -52,21 +52,26 @@ class SignUpController @Inject()(
       form => Future.successful(BadRequest(views.html.signUp(form))),
       data => {
         for {
-          registration <- accountService.register(data.firstName + " " + data.lastName,
-                                                  data.email,
-                                                  data.firstName,
-                                                  data.lastName,
-                                                  data.password)
+          registration <- accountService.register(
+                           data.firstName + " " + data.lastName,
+                           data.email,
+                           data.firstName,
+                           data.lastName,
+                           data.password
+                         )
           res <- registration match {
                   case UserAlreadyExists =>
                     Future.successful(
                       Redirect(routes.SignUpController.view())
                         .flashing(
-                          "warning" -> "User already exists. Please choose a different name."))
+                          "warning" -> "Account already exists. Please choose a different name."
+                        )
+                    )
                   case RegistrationSucceed(_) =>
                     Future.successful(
-                      Redirect(routes.SignUpController.view())
-                        .flashing("info" -> "Sign up successful!"))
+                      Redirect(routes.SignInController.view())
+                        .flashing("info" -> "Sign up successful! Please sign in!")
+                    )
                 }
         } yield res
 

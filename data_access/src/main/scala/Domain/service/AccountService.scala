@@ -2,7 +2,7 @@ package Domain.service
 
 import javax.inject.{Inject, Singleton}
 
-import Domain.entity.User
+import Domain.entity.Account
 import Domain.repository.{AccountEventBus, AccountRepository, AuthTokenRepository, DefaultEnv}
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
@@ -14,7 +14,13 @@ import com.mohiva.play.silhouette.impl.exceptions.{
 }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import play.api.mvc.{AnyContent, Request, Result}
+
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+
+final case class RememberMeConfig(cookieMaxAge: FiniteDuration,
+                                  authenticatorIdleTimeout: FiniteDuration,
+                                  authenticatorExpiry: FiniteDuration)
 
 @Singleton
 class AccountManager @Inject()(accountRepo: AccountRepository,
@@ -31,9 +37,9 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
   import Domain.entity.AccountStatus
   import AccountStatus._
 
-  def register(command: UserRegistrationByPassword)(
-      implicit ec: ExecutionContext,
-      request: play.api.mvc.RequestHeader): Future[AccountStatus] = {
+  def register(
+      command: UserRegistrationByPassword
+  )(implicit ec: ExecutionContext, request: play.api.mvc.RequestHeader): Future[AccountStatus] = {
 
     val loginInfo = LoginInfo(credentialsProvider.id, command.email)
 
@@ -49,12 +55,14 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
                    val passwordInfo = passwordHasherRegistry.current.hash(command.password)
 
                    for {
-                     account <- accountRepo.createUser(command.username,
-                                                       command.email,
-                                                       command.firstname,
-                                                       command.lastname,
-                                                       passwordInfo,
-                                                       loginInfo)
+                     account <- accountRepo.createUser(
+                                 command.username,
+                                 command.email,
+                                 command.firstname,
+                                 command.lastname,
+                                 passwordInfo,
+                                 loginInfo
+                               )
                      authInfo <- authInfoRepo.add(loginInfo, passwordInfo)
                      authToken <- authTokenRepo.create(account.id)
                      // FIXME: something wrong with event bus???
@@ -69,7 +77,7 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
 /**
   * Handles actions to users.
   *
-  * @param accountRepo The User repository.
+  * @param accountRepo The Account repository.
   * @param silhouette
   * @param passwordHasherRegistry The password hasher registry.
   * @param authInfoRepo     The auth info repository implementation.
@@ -93,13 +101,15 @@ class AccountService @Inject()(accountRepo: AccountRepository,
 
   def signIn(email: String, password: String, rememberMe: Boolean, response: Result)(
       implicit ec: ExecutionContext,
-      request: Request[AnyContent]): Future[SignInStatus] = {
+      request: Request[AnyContent]
+  ): Future[SignInStatus] = {
     val credentials = Credentials(email, password)
 
     val res = for {
       loginInfo <- credentialsProvider.authenticate(credentials)
-      user <- accountRepo.retrieve(loginInfo).flatMap {
-               case None    => Future.failed(new IdentityNotFoundException("User not found!"))
+      retrieved <- accountRepo.retrieve(loginInfo)
+      user <- retrieved match {
+               case None    => Future.failed(new IdentityNotFoundException("Account not found!"))
                case Some(v) => Future.successful(v)
              }
       cookieAuth <- silhouette.env.authenticatorService
@@ -165,7 +175,8 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                lastname: String,
                password: String)(
       implicit ec: ExecutionContext,
-      request: play.api.mvc.RequestHeader): Future[RegistrationStatus] = {
+      request: play.api.mvc.RequestHeader
+  ): Future[RegistrationStatus] = {
 
     val loginInfo = LoginInfo(CredentialsProvider.ID, email)
 
@@ -181,12 +192,14 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                    val passwordInfo = passwordHasherRegistry.current.hash(password)
 
                    for {
-                     account <- accountRepo.createUser(username,
-                                                       email,
-                                                       firstname,
-                                                       lastname,
-                                                       passwordInfo,
-                                                       loginInfo)
+                     account <- accountRepo.createUser(
+                                 username,
+                                 email,
+                                 firstname,
+                                 lastname,
+                                 passwordInfo,
+                                 loginInfo
+                               )
                      authInfo <- authInfoRepo.add(loginInfo, passwordInfo)
                      authToken <- authTokenRepo.create(account.id)
                      // FIXME: something wrong with event bus???
@@ -204,7 +217,7 @@ object AccountService {
 
   sealed trait RegistrationStatus
   case object UserAlreadyExists extends RegistrationStatus
-  final case class RegistrationSucceed(user: User) extends RegistrationStatus
+  final case class RegistrationSucceed(user: Account) extends RegistrationStatus
 
   sealed trait SignInStatus
   final case class Authenticated(result: AuthenticatorResult) extends SignInStatus

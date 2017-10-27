@@ -8,5 +8,5 @@ object AccountStatus extends Enum[AccountStatus] {
   val values = findValues
 
   case object AlreadyExists extends AccountStatus
-  final case class Registered(user: User) extends AccountStatus
+  final case class Registered(user: Account) extends AccountStatus
 }

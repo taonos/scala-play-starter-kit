@@ -16,4 +16,4 @@
 //  case object Weibo extends ExternalProvider
 //}
 //
-//final case class ExternalLogin(provider: ExternalProvider, key: String, belongsTo: UserId)
+//final case class ExternalLogin(provider: ExternalProvider, key: String, belongsTo: AccountId)

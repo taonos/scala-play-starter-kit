@@ -28,7 +28,7 @@ commands += Command.args("scalafmt", "Run scalafmt cli.") {
 
 lazy val commonSettings = Seq(
   version := "1.0",
-  scalaVersion := "2.12.3",
+  scalaVersion := "2.12.4",
   resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases",
   resolvers += "Akka Snapshot Repository" at "http://repo.akka.io/snapshots/",
   resolvers += "micronautics/scala on bintray" at "http://dl.bintray.com/micronautics/scala",

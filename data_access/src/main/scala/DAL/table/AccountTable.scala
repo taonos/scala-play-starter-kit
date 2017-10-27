@@ -4,7 +4,7 @@ import java.util.UUID
 
 import DAL.DAO.{PK, TableWithPK}
 
-final case class AccountId(value: UUID) extends PK
+final case class AccountId(value: UUID = UUID.randomUUID()) extends PK
 
 object AccountId {
 

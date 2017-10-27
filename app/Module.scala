@@ -1,4 +1,4 @@
-import DAL.DAO.{AccountDAO, CredentialDAO}
+import DAL.DAO.{AccountCredentialDAO, AccountDAO, CredentialDAO}
 import DAL.DbContext
 import com.google.inject.{AbstractModule, Provides, TypeLiteral}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -76,26 +76,28 @@ class Module extends AbstractModule {
 
   @Provides
   def provideIDGenerator(
-      implicit @Named("cpu-execution-context") ec: ExecutionContext): IDGenerator = {
+      implicit @Named("cpu-execution-context") ec: ExecutionContext
+  ): IDGenerator = {
     new SecureRandomIDGenerator()
   }
 
   /**
     * Provides the Silhouette environment.
     *
-    * @param userRepo The user service implementation.
+    * @param accountRepo The user service implementation.
     * @param authenticatorService The authentication service implementation.
     * @param eventBus The event bus instance.
     * @return The Silhouette environment.
     */
   @Provides
-  def provideEnvironment(userRepo: AccountRepository,
-                         authenticatorService: AuthenticatorService[CookieAuthenticator],
-                         eventBus: EventBus)(
-      implicit @Named("cpu-execution-context") ec: ExecutionContext): Environment[DefaultEnv] = {
+  def provideEnvironment(
+      accountRepo: AccountRepository,
+      authenticatorService: AuthenticatorService[CookieAuthenticator],
+      eventBus: EventBus
+  )(implicit @Named("cpu-execution-context") ec: ExecutionContext): Environment[DefaultEnv] = {
 
     Environment[DefaultEnv](
-      userRepo,
+      accountRepo,
       authenticatorService,
       Seq(),
       eventBus
@@ -103,9 +105,13 @@ class Module extends AbstractModule {
   }
 
   @Provides
-  def provideDelegate(ctx: DbContext, accountDAO: AccountDAO, credentialDAO: CredentialDAO)(
-      implicit ec: ExecutionContext): DelegableAuthInfoDAO[PasswordInfo] = {
-    new CredentialRepository(ctx, accountDAO, credentialDAO)
+  def provideDelegate(
+      ctx: DbContext,
+//                      accountDAO: AccountDAO,
+//                      credentialDAO: CredentialDAO,
+      accountCredentialDAO: AccountCredentialDAO
+  )(implicit ec: ExecutionContext): DelegableAuthInfoDAO[PasswordInfo] = {
+    new CredentialRepository(ctx, accountCredentialDAO)
   }
 
 //  @Provides
@@ -186,27 +192,29 @@ class Module extends AbstractModule {
     */
   @Provides
   @throws[ConfigReaderException[_]]
-  def provideAuthenticatorService(
-      @Named("authenticator-signer") signer: Signer,
-      @Named("authenticator-crypter") crypter: Crypter,
-      cookieHeaderEncoding: CookieHeaderEncoding,
-      fingerprintGenerator: FingerprintGenerator,
-      idGenerator: IDGenerator,
-      configuration: Configuration,
-      clock: Clock)(implicit @Named("cpu-execution-context") ec: ExecutionContext)
-    : AuthenticatorService[CookieAuthenticator] = {
+  def provideAuthenticatorService(@Named("authenticator-signer") signer: Signer,
+                                  @Named("authenticator-crypter") crypter: Crypter,
+                                  cookieHeaderEncoding: CookieHeaderEncoding,
+                                  fingerprintGenerator: FingerprintGenerator,
+                                  idGenerator: IDGenerator,
+                                  configuration: Configuration,
+                                  clock: Clock)(
+      implicit @Named("cpu-execution-context") ec: ExecutionContext
+  ): AuthenticatorService[CookieAuthenticator] = {
 
     val config = loadConfigOrThrow[CookieAuthenticatorSettings]("silhouette.authenticator")
     val authenticatorEncoder = new CrypterAuthenticatorEncoder(crypter)
 
-    new CookieAuthenticatorService(config,
-                                   None,
-                                   signer,
-                                   cookieHeaderEncoding,
-                                   authenticatorEncoder,
-                                   fingerprintGenerator,
-                                   idGenerator,
-                                   clock)
+    new CookieAuthenticatorService(
+      config,
+      None,
+      signer,
+      cookieHeaderEncoding,
+      authenticatorEncoder,
+      fingerprintGenerator,
+      idGenerator,
+      clock
+    )
   }
 
   @Provides
