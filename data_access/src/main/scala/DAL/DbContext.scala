@@ -28,7 +28,6 @@ trait Decoder { this: AsyncContext[_, _, _] =>
   implicit val jodaDateTimeDecoder: Decoder[JodaDateTime] = decoder[JodaDateTime]({
     case dateTime: JodaDateTime => dateTime
   }, SqlTypes.TIMESTAMP)
-
 }
 
 trait Encoder { this: AsyncContext[_, _, _] =>

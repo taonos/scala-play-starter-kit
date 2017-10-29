@@ -1,7 +1,6 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
-
 import com.mohiva.play.silhouette.api._
 import org.webjars.play.WebJarsUtil
 import play.api.i18n.I18nSupport
@@ -9,6 +8,7 @@ import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, Reque
 import Domain.service.AccountService
 import Domain.service.AccountService.{RegistrationSucceed, UserAlreadyExists}
 import forms.SignUpForm
+import eu.timepit.refined.auto._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -53,7 +53,7 @@ class SignUpController @Inject()(
       data => {
         for {
           registration <- accountService.register(
-                           data.firstName + " " + data.lastName,
+                           data.username,
                            data.email,
                            data.firstName,
                            data.lastName,

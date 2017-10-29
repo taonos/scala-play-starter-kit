@@ -121,5 +121,14 @@ object Dependencies {
     object JodaTime {
       val core: ModuleID = "joda-time" % "joda-time" % "2.9.9"
     }
+
+    object Refined extends Entirety {
+      val core: ModuleID = "eu.timepit" %% "refined" % "0.8.4"
+
+      val pureconfig
+        : ModuleID = "eu.timepit" %% "refined-pureconfig" % "0.8.4" // optional, JVM-only
+
+      override val toSeq: Seq[ModuleID] = Seq(core, pureconfig)
+    }
   }
 }

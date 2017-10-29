@@ -2,7 +2,10 @@ package DAL.table
 
 import java.util.UUID
 
+import eu.timepit.refined.api.RefType
+import eu.timepit.refined._
 import DAL.DAO.{PK, TableWithPK}
+import utility.RefinedTypes.UsernameString
 
 final case class AccountId(value: UUID = UUID.randomUUID()) extends PK
 
@@ -14,14 +17,26 @@ object AccountId {
   implicit val decode = MappedEncoding[UUID, AccountId](AccountId.apply)
 }
 
-final case class AccountUsername(value: String)
+final case class AccountUsername(value: UsernameString)
 
 object AccountUsername {
 
   import io.getquill.MappedEncoding
 
-  implicit val encode = MappedEncoding[AccountUsername, String](_.value)
-  implicit val decode = MappedEncoding[String, AccountUsername](AccountUsername.apply)
+  implicit val encode = MappedEncoding[AccountUsername, String](
+    _.value.value
+  )
+  implicit val decode =
+    MappedEncoding[String, AccountUsername] { str =>
+      val value = RefType
+        .applyRef[UsernameString](str)
+        .map(AccountUsername.apply)
+      value match {
+        case Right(v) => v
+        // TODO: come up with a better implementation
+        case Left(_) => throw new Exception("Impossible path")
+      }
+    }
 }
 
 /**

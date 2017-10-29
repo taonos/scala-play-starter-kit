@@ -13,7 +13,10 @@ import com.mohiva.play.silhouette.impl.exceptions.{
   InvalidPasswordException
 }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import eu.timepit.refined.api.Refined
+import eu.timepit.refined.collection.NonEmpty
 import play.api.mvc.{AnyContent, Request, Result}
+import utility.RefinedTypes.UsernameString
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -134,42 +137,9 @@ class AccountService @Inject()(accountRepo: AccountRepository,
         case _: IdentityNotFoundException => UserNotFound
       }
 
-//    credentialsProvider
-//      .authenticate(credentials)
-//      .flatMap { loginInfo => accountRepo.retrieve(loginInfo).map((loginInfo, _)) }
-//      .flatMap {
-//        case (loginInfo, Some(user)) =>
-//          // Creates a new Authenticator from the an identity's login information. This action should be executed after
-//          // a successful authentication. The created Authenticator can then be used to recognize the user on every
-//          // subsequent request.
-//          silhouette.env.authenticatorService.create(loginInfo)
-//            .map {
-//              case authenticator if rememberMe =>
-//
-//                authenticator.copy(
-//                  expirationDateTime = clock.now + rememberMeConfig.authenticatorExpiry,
-//                  idleTimeout = Some(rememberMeConfig.authenticatorIdleTimeout),
-//                  cookieMaxAge = Some(rememberMeConfig.cookieMaxAge)
-//                )
-//              case authenticator => authenticator
-//            }
-//            .flatMap { authenticator =>
-//              accountEventBus.publishSignInEvent(user, request)
-//              silhouette.env.authenticatorService.init(authenticator).flatMap { v =>
-//                silhouette.env.authenticatorService.embed(v, result)
-//              }
-//            }
-//
-//
-//        case (_, None) => Future.successful(UserNotFound)
-//      }
-//      .recover {
-//        case _: InvalidPasswordException => InvalidPassword
-//        case _:
-//      }
   }
 
-  def register(username: String,
+  def register(username: UsernameString,
                email: String,
                firstname: String,
                lastname: String,

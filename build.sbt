@@ -122,10 +122,15 @@ lazy val dataAccessDependencies = Seq(
   JavaxInject.inject,
   Shapeless.core,
   JodaTime.core,
-  Enumeratum.core
+  Enumeratum.core,
+  Refined.core
 ) ++ Monix.toSeq ++ Silhouette.toSeq
 
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
+
+lazy val utilityDependencies = Seq(
+  Refined.core
+)
 
 lazy val appDependencies = Seq(
   jdbc,
@@ -140,7 +145,8 @@ lazy val appDependencies = Seq(
   Shapeless.core,
   Bootstrap.core,
   PureConfig.core,
-  Enumeratum.core
+  Enumeratum.core,
+  Refined.core
 ) ++
   Monix.toSeq ++
   Silhouette.toSeq ++
@@ -162,9 +168,16 @@ lazy val flywaySettings = Seq(
 //  flywayLocations := Seq("classpath:db/migration")
 )
 
+lazy val utility = (project in file("utility"))
+  .settings(commonSettings: _*)
+  .settings(commonWartRemoverSettings: _*)
+  .settings {
+    libraryDependencies ++= utilityDependencies
+  }
+
 lazy val `scala-play-starter-kit` = (project in file("."))
-  .dependsOn(`data_access`, configuration)
-  .aggregate(`data_access`, configuration)
+  .dependsOn(utility, `data_access`, configuration)
+  .aggregate(utility, `data_access`, configuration)
   .settings(commonSettings: _*)
   .settings(rootWartRemoverSettings: _*)
   .settings {
@@ -196,9 +209,12 @@ lazy val population = (project in file("population"))
   }
 
 lazy val `data_access` = (project in file("data_access"))
+  .dependsOn(utility)
+  .aggregate(utility)
   .settings(commonSettings: _*)
   .settings(dataAccessWartRemoverSettings: _*)
   .settings {
     libraryDependencies ++= dataAccessDependencies
   }
+
 //unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )

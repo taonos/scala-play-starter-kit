@@ -1,7 +1,11 @@
 package Domain.entity
 
 import java.util.UUID
+
 import com.mohiva.play.silhouette.api.Identity
+import eu.timepit.refined.collection._
+import eu.timepit.refined.api.Refined
+import utility.RefinedTypes.UsernameString
 
 /**
   *
@@ -10,7 +14,7 @@ import com.mohiva.play.silhouette.api.Identity
   * @param username
   * @param email
   */
-final case class Account(id: UUID, username: String, email: String) extends Identity
+final case class Account(id: UUID, username: UsernameString, email: String) extends Identity
 
 /**
   *

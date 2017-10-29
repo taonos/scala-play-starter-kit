@@ -15,3 +15,11 @@ password = Password
 not.a.member = Not a member?
 
 remember.me = Remember my login on this computer
+
+# --- Constraints
+constraint.email=Email
+constraint.username=Username
+
+# --- Errors
+error.password=Valid password with minimum of length 8 containing at least 1 digit, 1 lowercase character and 1 uppercase character is required
+error.username=Valid username with minimum of length 3 containing only digit, upper and lower cases and the following symbols "._-"

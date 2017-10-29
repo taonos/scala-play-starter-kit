@@ -1,6 +1,7 @@
 package Domain.repository
 
 import javax.inject.{Inject, Singleton}
+
 import DAL.DAO.{AccountCredentialDAO, AccountDAO, CredentialDAO}
 import DAL.DbContext
 import DAL.table._
@@ -9,6 +10,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import scala.concurrent.{ExecutionContext, Future}
+import utility.RefinedTypes.UsernameString
 
 @Singleton
 class AccountRepository @Inject()(
@@ -20,15 +22,6 @@ class AccountRepository @Inject()(
     extends IdentityService[Account] {
   import AccountRepository._
   import ctx._
-
-//      /**
-//        * Retrieves a user that matches the specified ID.
-//        *
-//        * @param id The ID to retrieve a user.
-//        * @return The retrieved user or None if no user could be retrieved for the given ID.
-//        */
-//      def retrieve(id: UUID): Future[Option[Account]] = ???
-////        accountCredentialDAO.findBy(AccountId(id))
 
   /**
     * Retrieves a user that matches the specified login info.
@@ -42,7 +35,7 @@ class AccountRepository @Inject()(
       r = account.map(accountCredentialTableToUser)
     } yield r
 
-  def createUser(username: String,
+  def createUser(username: UsernameString,
                  email: String,
                  firstname: String,
                  lastname: String,

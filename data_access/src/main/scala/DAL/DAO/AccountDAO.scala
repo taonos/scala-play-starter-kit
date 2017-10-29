@@ -41,12 +41,6 @@ class AccountDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
 
   def insertBatch(rows: Seq[AccountTable]): Future[Long] =
     Future.sequence(rows.map(insert)).map(_.length)
-//    Task.deferFutureAction { implicit scheduler =>
-//      run(quote {
-//        liftQuery(rows).foreach(v => table.insert(v))
-//      })
-//    }
-//      .map(_.length)
 
   def update(row: AccountTable): Future[AccountTable] =
     run(table.update(lift(row)))
