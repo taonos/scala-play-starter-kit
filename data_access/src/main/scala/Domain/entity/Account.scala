@@ -3,8 +3,6 @@ package Domain.entity
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.Identity
-import eu.timepit.refined.collection._
-import eu.timepit.refined.api.Refined
 import utility.RefinedTypes.{EmailString, UsernameString}
 
 /**

@@ -2,10 +2,9 @@
 @import play.twirl.api.Html
 @import org.webjars.play.WebJarsUtil
 @import controllers.AssetsFinder
-@import DAL.table._
-@import Domain.entity._
+@import Domain.entity.Account
 
-@(title: String, user: Option[Account] = None)(content: Html)(implicit request: RequestHeader, assets: AssetsFinder, webJarsUtil: WebJarsUtil, messages: Messages)
+@(title: String, account: Option[Account] = None)(content: Html)(implicit request: RequestHeader, assets: AssetsFinder, webJarsUtil: WebJarsUtil, messages: Messages)
 
 <!DOCTYPE html>
 
@@ -46,7 +45,7 @@
                         <li><a href="https://github.com/mohiva/play-silhouette-seed">GitHub</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
-                    @user.map { u =>
+                    @account.map { u =>
                     @*<li><a href="@controllers.routes.HomeController.index">@u.firstname</a></li>*@
                     @*@if(u.loginInfo.providerID == com.mohiva.play.silhouette.impl.providers.CredentialsProvider.ID) {*@
                         @*<li><a href="@controllers.routes.ChangePasswordController.view">@messages("change.password")</a></li>*@

@@ -25,7 +25,7 @@
 //
 //  // This code is called when the application starts.
 //  private val start: Instant = clock.instant
-//  Logger.info(s"ApplicationTimer main: Starting application at $start.")
+//  Logger.info(s"ApplicationTimer application: Starting application at $start.")
 //
 //  // When the application starts, register a stop hook with the
 //  // ApplicationLifecycle object. The code inside the stop hook will
@@ -34,7 +34,7 @@
 //    val stop: Instant     = clock.instant
 //    val runningTime: Long = stop.getEpochSecond - start.getEpochSecond
 //    Logger.info(
-//      s"ApplicationTimer main: Stopping application at ${clock.instant} after ${runningTime}s.")
+//      s"ApplicationTimer application: Stopping application at ${clock.instant} after ${runningTime}s.")
 //    Future.successful(())
 //  }
 //}

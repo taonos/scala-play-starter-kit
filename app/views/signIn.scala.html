@@ -9,7 +9,7 @@
 
 @(signInForm: Form[Data])(implicit request: RequestHeader, messages: Messages, webJarsUtil: WebJarsUtil, assets: AssetsFinder)
 
-@main(messages("sign.in.title")) {
+@application(messages("sign.in.title")) {
     <fieldset class="col-md-6 col-md-offset-3">
         <legend>@messages("sign.in.credentials")</legend>
         @helper.form(action = controllers.routes.SignInController.submit()) {

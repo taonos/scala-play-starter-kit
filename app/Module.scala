@@ -46,7 +46,7 @@ import scala.concurrent.ExecutionContext
   * configuration file.
   */
 class Module extends AbstractModule {
-  import Domain.repository.DefaultEnv
+  import Domain.repository.CookieEnv
   import Module._
 
   override def configure() = {
@@ -59,8 +59,8 @@ class Module extends AbstractModule {
     // Set AtomicCounter as the implementation for Counter.
 //    bind(classOf[Counter]).to(classOf[AtomicCounter])
 
-    bind(new TypeLiteral[Silhouette[DefaultEnv]] {})
-      .to(new TypeLiteral[SilhouetteProvider[DefaultEnv]] {})
+    bind(new TypeLiteral[Silhouette[CookieEnv]] {})
+      .to(new TypeLiteral[SilhouetteProvider[CookieEnv]] {})
     bind(classOf[FingerprintGenerator]).toInstance(new DefaultFingerprintGenerator(false))
     bind(classOf[com.mohiva.play.silhouette.api.util.Clock])
       .toInstance(com.mohiva.play.silhouette.api.util.Clock())
@@ -94,9 +94,9 @@ class Module extends AbstractModule {
       accountRepo: AccountRepository,
       authenticatorService: AuthenticatorService[CookieAuthenticator],
       eventBus: EventBus
-  )(implicit @Named("cpu-execution-context") ec: ExecutionContext): Environment[DefaultEnv] = {
+  )(implicit @Named("cpu-execution-context") ec: ExecutionContext): Environment[CookieEnv] = {
 
-    Environment[DefaultEnv](
+    Environment[CookieEnv](
       accountRepo,
       authenticatorService,
       Seq(),

@@ -3,7 +3,7 @@ package Domain.service
 import javax.inject.{Inject, Singleton}
 
 import Domain.entity.Account
-import Domain.repository.{AccountEventBus, AccountRepository, AuthTokenRepository, DefaultEnv}
+import Domain.repository.{AccountEventBus, AccountRepository, AuthTokenRepository, CookieEnv}
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -27,7 +27,7 @@ final case class RememberMeConfig(cookieMaxAge: FiniteDuration,
 
 @Singleton
 class AccountManager @Inject()(accountRepo: AccountRepository,
-                               silhouette: Silhouette[DefaultEnv],
+                               silhouette: Silhouette[CookieEnv],
                                passwordHasherRegistry: PasswordHasherRegistry,
                                authInfoRepo: AuthInfoRepository,
                                authTokenRepo: AuthTokenRepository,
@@ -92,7 +92,7 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
   */
 @Singleton
 class AccountService @Inject()(accountRepo: AccountRepository,
-                               silhouette: Silhouette[DefaultEnv],
+                               silhouette: Silhouette[CookieEnv],
                                passwordHasherRegistry: PasswordHasherRegistry,
                                authInfoRepo: AuthInfoRepository,
                                authTokenRepo: AuthTokenRepository,

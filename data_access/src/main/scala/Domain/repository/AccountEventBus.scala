@@ -6,7 +6,7 @@ import play.api.mvc.{AnyContent, Request}
 import scala.concurrent.Future
 
 @Singleton
-class AccountEventBus @Inject()(silhouette: Silhouette[DefaultEnv]) {
+class AccountEventBus @Inject()(silhouette: Silhouette[CookieEnv]) {
 
   def publishSignUpEvent[I <: Identity](identity: I,
                                         request: play.api.mvc.RequestHeader): Future[Unit] = {

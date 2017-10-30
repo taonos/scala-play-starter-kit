@@ -1,14 +1,16 @@
 package controllers
 
 import javax.inject.{Inject, Singleton}
+
 import com.mohiva.play.silhouette.api._
 import forms.SignInForm
 import Domain.service._
 import org.webjars.play.WebJarsUtil
 import play.api.i18n.{I18nSupport, Messages}
-import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, Request}
+import play.api.mvc._
+
 import scala.concurrent.{ExecutionContext, Future}
-import Domain.repository.DefaultEnv
+import Domain.repository.CookieEnv
 import AccountService._
 
 /**
@@ -24,7 +26,7 @@ import AccountService._
 @Singleton
 class SignInController @Inject()(
     components: ControllerComponents,
-    silhouette: Silhouette[DefaultEnv],
+    silhouette: Silhouette[CookieEnv],
     accountService: AccountService,
 )(
     implicit ec: ExecutionContext,
@@ -38,7 +40,7 @@ class SignInController @Inject()(
     *
     * @return The result to display.
     */
-  def view = silhouette.UnsecuredAction.async { implicit request: Request[AnyContent] =>
+  def view: Action[AnyContent] = silhouette.UnsecuredAction.async { implicit req =>
     Future.successful(Ok(views.html.signIn(SignInForm.form)))
   }
 
@@ -47,7 +49,7 @@ class SignInController @Inject()(
     *
     * @return The result to display.
     */
-  def submit = silhouette.UnsecuredAction.async { implicit request: Request[AnyContent] =>
+  def submit: Action[AnyContent] = silhouette.UnsecuredAction.async { implicit request =>
     SignInForm.form.bindFromRequest.fold(
       form => Future.successful(BadRequest(views.html.signIn(form))),
       data => {
