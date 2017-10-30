@@ -7,6 +7,8 @@ sign.in = Sign in
 sign.in.title = Silhouette - Sign In
 sign.in.credentials = Sign in with your credentials
 
+sign.out=Sign out
+
 first.name = First name
 last.name = Last Name
 full.name = Full Name
@@ -15,6 +17,8 @@ password = Password
 not.a.member = Not a member?
 
 remember.me = Remember my login on this computer
+
+home=Home
 
 # --- Constraints
 constraint.email=Email
