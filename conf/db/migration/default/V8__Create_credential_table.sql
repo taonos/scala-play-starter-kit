@@ -1,12 +1,13 @@
 CREATE TABLE credential
 (
   id uuid NOT NULL,
-  hasher character varying(30) NOT NULL,
-  hashed_password character varying(255) NOT NULL,
-  salt character varying(255),
+  hasher character varying NOT NULL,
+  hashed_password character varying NOT NULL,
+  salt character varying,
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  CONSTRAINT credential_hasher_check CHECK (hasher IN ('bcrypt-sha256'))
 );
 
 

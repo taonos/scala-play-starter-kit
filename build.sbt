@@ -129,7 +129,8 @@ lazy val dataAccessDependencies = Seq(
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
 
 lazy val utilityDependencies = Seq(
-  Refined.core
+  Refined.core,
+  Quill.asyncpostgresql
 )
 
 lazy val appDependencies = Seq(

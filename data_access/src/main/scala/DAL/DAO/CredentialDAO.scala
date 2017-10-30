@@ -1,8 +1,10 @@
 package DAL.DAO
 
 import javax.inject.{Inject, Singleton}
+
 import DAL.DbContext
-import DAL.table.{CredentialId, CredentialTable}
+import DAL.table.{CredentialId, CredentialTable, HashedPassword, Hasher}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -31,8 +33,8 @@ class CredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext)
     run(table.update(lift(row))).map(_ => row)
 
   def updatePassword(id: CredentialId,
-                     hasher: String,
-                     password: String,
+                     hasher: Hasher,
+                     password: HashedPassword,
                      salt: Option[String]): Future[Long] =
     run(
       filterById(lift(id))

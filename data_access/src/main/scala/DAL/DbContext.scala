@@ -1,17 +1,22 @@
 package DAL
 
 import javax.inject.{Inject, Singleton}
+
+import eu.timepit.refined.api.RefType
 import io.getquill.context.async.{AsyncContext, SqlTypes, TransactionalExecutionContext}
 import io.getquill.{ImplicitQuery, PostgresAsyncContext, PostgresEscape, SnakeCase}
 import monix.eval.Task
 import org.joda.time.{DateTime => JodaDateTime}
+import utility.QuillRefined
 
 @Singleton
 class DbContext @Inject()()
     extends PostgresAsyncContext[PostgresEscape with SnakeCase]("db.default")
     with ImplicitQuery
     with Encoder
-    with Decoder {
+    with Decoder
+    with QuillRefined.Decoder
+    with QuillRefined.Encoder {
 
   def transaction_task[T](f: TransactionalExecutionContext => Task[T]): Task[T] =
     Task.deferFutureAction { implicit scheduler =>

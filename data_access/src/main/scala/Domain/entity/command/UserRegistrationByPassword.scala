@@ -2,13 +2,11 @@ package Domain.entity.command
 
 import java.util.UUID
 
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.collection.NonEmpty
-import utility.RefinedTypes.UsernameString
+import utility.RefinedTypes.{EmailString, NonEmptyString, PasswordString, UsernameString}
 
 final case class UserRegistrationByPassword(private[Domain] val id: UUID = UUID.randomUUID(),
                                             username: UsernameString,
-                                            email: String,
-                                            firstname: String,
-                                            lastname: String,
-                                            password: String)
+                                            email: EmailString,
+                                            firstname: NonEmptyString,
+                                            lastname: NonEmptyString,
+                                            password: PasswordString)

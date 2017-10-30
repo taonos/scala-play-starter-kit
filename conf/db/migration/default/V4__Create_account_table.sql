@@ -1,6 +1,6 @@
 create table account (
   id UUID NOT NULL,
-  username VARCHAR(100) NOT NULL,
+  username VARCHAR NOT NULL,
   email VARCHAR NOT NULL,
   firstname VARCHAR NOT NULL,
   lastname VARCHAR NOT NULL,

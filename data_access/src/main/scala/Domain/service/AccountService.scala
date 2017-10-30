@@ -16,7 +16,7 @@ import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.collection.NonEmpty
 import play.api.mvc.{AnyContent, Request, Result}
-import utility.RefinedTypes.UsernameString
+import utility.RefinedTypes.{EmailString, UsernameString}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -44,7 +44,7 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
       command: UserRegistrationByPassword
   )(implicit ec: ExecutionContext, request: play.api.mvc.RequestHeader): Future[AccountStatus] = {
 
-    val loginInfo = LoginInfo(credentialsProvider.id, command.email)
+    val loginInfo = LoginInfo(credentialsProvider.id, command.email.value)
 
     for {
       userRetrieved <- accountRepo
@@ -55,14 +55,14 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
 
                  // save account info
                  case None =>
-                   val passwordInfo = passwordHasherRegistry.current.hash(command.password)
+                   val passwordInfo = passwordHasherRegistry.current.hash(command.password.value)
 
                    for {
                      account <- accountRepo.createUser(
                                  command.username,
                                  command.email,
-                                 command.firstname,
-                                 command.lastname,
+                                 command.firstname.value,
+                                 command.lastname.value,
                                  passwordInfo,
                                  loginInfo
                                )
@@ -140,7 +140,7 @@ class AccountService @Inject()(accountRepo: AccountRepository,
   }
 
   def register(username: UsernameString,
-               email: String,
+               email: EmailString,
                firstname: String,
                lastname: String,
                password: String)(
@@ -148,7 +148,7 @@ class AccountService @Inject()(accountRepo: AccountRepository,
       request: play.api.mvc.RequestHeader
   ): Future[RegistrationStatus] = {
 
-    val loginInfo = LoginInfo(CredentialsProvider.ID, email)
+    val loginInfo = LoginInfo(CredentialsProvider.ID, email.value)
 
     for {
       userRetrieved <- accountRepo

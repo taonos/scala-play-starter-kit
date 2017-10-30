@@ -26,7 +26,7 @@ class CredentialRepository @Inject()(
     */
   override def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
     accountCredentialDAO
-      .findBy(loginInfo.providerKey)
+      .findBy(loginInfoToAccountEmail(loginInfo))
       .map(_.flatMap(passwordInfoToAccountCredentialTable))
 
   /**
@@ -42,12 +42,12 @@ class CredentialRepository @Inject()(
 
   private def _update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
     for {
-      account <- accountCredentialDAO.findBy(loginInfo.providerKey)
+      account <- accountCredentialDAO.findBy(loginInfoToAccountEmail(loginInfo))
       row = account.map(
         _.copy(
           credentialId = Option(new CredentialId),
-          hasher = Option(authInfo.hasher),
-          hashedPassword = Option(authInfo.password),
+          hasher = Option(Hasher.withName(authInfo.hasher)),
+          hashedPassword = Option(HashedPassword.unsafeFrom(authInfo.password)),
           salt = authInfo.salt
         )
       )
@@ -94,7 +94,7 @@ class CredentialRepository @Inject()(
     * @return A future to wait for the process to be completed.
     */
   override def remove(loginInfo: LoginInfo): Future[Unit] =
-    accountCredentialDAO.deleteBy(loginInfo.providerKey)
+    accountCredentialDAO.deleteBy(loginInfoToAccountEmail(loginInfo))
 }
 
 object CredentialRepository {
@@ -105,5 +105,8 @@ object CredentialRepository {
     for {
       hasher <- v.hasher
       pw <- v.hashedPassword
-    } yield PasswordInfo(hasher, pw, v.salt)
+    } yield PasswordInfo(hasher.entryName, pw.value.value, v.salt)
+
+  private def loginInfoToAccountEmail(v: LoginInfo): AccountEmail =
+    AccountEmail.unsafeFrom(v.providerKey)
 }

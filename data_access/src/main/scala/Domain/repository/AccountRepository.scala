@@ -9,8 +9,10 @@ import Domain.entity.Account
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.api.util.PasswordInfo
+import eu.timepit.refined.api.RefType
+
 import scala.concurrent.{ExecutionContext, Future}
-import utility.RefinedTypes.UsernameString
+import utility.RefinedTypes.{EmailString, NonEmptyString, UsernameString}
 
 @Singleton
 class AccountRepository @Inject()(
@@ -31,12 +33,12 @@ class AccountRepository @Inject()(
     */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] =
     for {
-      account <- accountCredentialDAO.findBy(loginInfo.providerKey)
+      account <- accountCredentialDAO.findBy(loginInfoToAccountEmail(loginInfo))
       r = account.map(accountCredentialTableToUser)
     } yield r
 
   def createUser(username: UsernameString,
-                 email: String,
+                 email: EmailString,
                  firstname: String,
                  lastname: String,
                  passwordInfo: PasswordInfo,
@@ -44,20 +46,14 @@ class AccountRepository @Inject()(
     ctx
       .transaction[AccountTable] { implicit c =>
         for {
-          c <- credentialDAO.insert(
-                CredentialTable(
-                  passwordInfo.hasher,
-                  passwordInfo.password,
-                  passwordInfo.salt
-                )
-              )
+          c <- credentialDAO.insert(passwordInfoToCredentialTable(passwordInfo))
           a <- accountDAO.insert(
                 AccountTable(
                   new AccountId,
                   AccountUsername(username),
-                  email,
-                  firstname,
-                  lastname,
+                  AccountEmail(email),
+                  RefType.applyRef[NonEmptyString].unsafeFrom(firstname),
+                  RefType.applyRef[NonEmptyString].unsafeFrom(lastname),
                   Some(c.id)
                 )
               )
@@ -75,13 +71,23 @@ object AccountRepository {
     Account(
       v.id.value,
       v.username.value,
-      v.email
+      v.email.value
     )
 
   private def accountCredentialTableToUser(v: AccountCredentialTable): Account =
     Account(
       v.accountId.value,
       v.username.value,
-      v.email
+      v.email.value
+    )
+
+  private def loginInfoToAccountEmail(v: LoginInfo): AccountEmail =
+    AccountEmail.unsafeFrom(v.providerKey)
+
+  private def passwordInfoToCredentialTable(v: PasswordInfo): CredentialTable =
+    CredentialTable(
+      Hasher.withName(v.hasher),
+      HashedPassword.unsafeFrom(v.password),
+      v.salt
     )
 }

@@ -2,10 +2,9 @@ package DAL.table
 
 import java.util.UUID
 
-import eu.timepit.refined.api.RefType
-import eu.timepit.refined._
 import DAL.DAO.{PK, TableWithPK}
-import utility.RefinedTypes.UsernameString
+import eu.timepit.refined.api.RefType
+import utility.RefinedTypes.{EmailString, NonEmptyString, UsernameString}
 
 final case class AccountId(value: UUID = UUID.randomUUID()) extends PK
 
@@ -23,20 +22,24 @@ object AccountUsername {
 
   import io.getquill.MappedEncoding
 
-  implicit val encode = MappedEncoding[AccountUsername, String](
-    _.value.value
-  )
-  implicit val decode =
-    MappedEncoding[String, AccountUsername] { str =>
-      val value = RefType
-        .applyRef[UsernameString](str)
-        .map(AccountUsername.apply)
-      value match {
-        case Right(v) => v
-        // TODO: come up with a better implementation
-        case Left(_) => throw new Exception("Impossible path")
-      }
-    }
+  implicit val encode = MappedEncoding[AccountUsername, UsernameString](_.value)
+
+  implicit val decode = MappedEncoding[UsernameString, AccountUsername](AccountUsername.apply)
+
+}
+
+final case class AccountEmail(value: EmailString)
+
+object AccountEmail {
+
+  def unsafeFrom(v: String): AccountEmail =
+    AccountEmail(RefType.applyRef[EmailString].unsafeFrom(v))
+
+  import io.getquill.MappedEncoding
+
+  implicit val encode = MappedEncoding[AccountEmail, EmailString](_.value)
+
+  implicit val decode = MappedEncoding[EmailString, AccountEmail](AccountEmail.apply)
 }
 
 /**
@@ -49,9 +52,9 @@ object AccountUsername {
   */
 final case class AccountTable(id: AccountId,
                               username: AccountUsername,
-                              email: String,
-                              firstname: String,
-                              lastname: String,
+                              email: AccountEmail,
+                              firstname: NonEmptyString,
+                              lastname: NonEmptyString,
                               credentialId: Option[CredentialId])
     extends TableWithPK[AccountId]
     with Timestamped {

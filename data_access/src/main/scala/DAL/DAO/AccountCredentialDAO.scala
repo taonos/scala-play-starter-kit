@@ -2,7 +2,9 @@ package DAL.DAO
 
 import DAL.DbContext
 import javax.inject.{Inject, Singleton}
-import DAL.table.{AccountCredentialTable, AccountId, AccountUsername}
+
+import DAL.table._
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -22,14 +24,14 @@ class AccountCredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionC
     table.filter(_.username == u)
   }
 
-  private val filterByEmail = quote { (u: String) =>
+  private val filterByEmail = quote { (u: AccountEmail) =>
     table.filter(_.email == u)
   }
 
   def findBy(pk: AccountId): Future[Option[AccountCredentialTable]] =
     run(filterById(lift(pk))).map(_.headOption)
 
-  def findBy(email: String): Future[Option[AccountCredentialTable]] =
+  def findBy(email: AccountEmail): Future[Option[AccountCredentialTable]] =
     run(filterByEmail(lift(email))).map(_.headOption)
 
 //  def insert(row: AccountCredentialTable): Future[AccountCredentialTable] =
@@ -43,8 +45,8 @@ class AccountCredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionC
     }).map(_ => row)
 
   def updatePassword(id: AccountId,
-                     hasher: String,
-                     hashedPassword: String,
+                     hasher: Hasher,
+                     hashedPassword: HashedPassword,
                      salt: Option[String]): Future[Long] =
     run(filterById(lift(id)).update({ v =>
       v.hasher -> lift(Option(hasher))
@@ -57,6 +59,6 @@ class AccountCredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionC
   def deleteBy(pk: AccountId): Future[Unit] =
     run(filterById(lift(pk)).delete).map(_ => ())
 
-  def deleteBy(email: String): Future[Unit] =
+  def deleteBy(email: AccountEmail): Future[Unit] =
     run(filterByEmail(lift(email)).delete).map(_ => ())
 }
