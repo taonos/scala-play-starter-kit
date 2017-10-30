@@ -1,9 +1,9 @@
-package util
+package utility
 
-import java.util.concurrent.{Executors, _}
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.{Executors, _}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 object ExecutionContextFactory {
 
@@ -11,7 +11,8 @@ object ExecutionContextFactory {
     newCachedThreadExecutionContext("Default I/O thread pool")
   }
 
-  val cpuExecutionContext = ExecutionContext.fromExecutor(new ForkJoinPool())
+  val cpuExecutionContext: ExecutionContextExecutor =
+    ExecutionContext.fromExecutor(new ForkJoinPool())
 
   /**
     * Create an ExecutionContext backed by a cached thread pool.

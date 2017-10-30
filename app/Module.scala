@@ -31,7 +31,7 @@ import Domain.service.RememberMeConfig
 import play.api.Configuration
 import play.api.mvc.CookieHeaderEncoding
 import pureconfig._
-import util.ExecutionContextFactory
+import utility.ExecutionContextFactory
 
 import scala.concurrent.ExecutionContext
 
