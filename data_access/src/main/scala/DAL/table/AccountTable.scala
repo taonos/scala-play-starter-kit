@@ -22,6 +22,9 @@ object AccountUsername {
 
   import io.getquill.MappedEncoding
 
+  def unsafeFrom(v: String): AccountUsername =
+    AccountUsername(RefType.applyRef[UsernameString].unsafeFrom(v))
+
   implicit val encode = MappedEncoding[AccountUsername, UsernameString](_.value)
 
   implicit val decode = MappedEncoding[UsernameString, AccountUsername](AccountUsername.apply)

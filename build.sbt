@@ -114,7 +114,7 @@ lazy val rootWartRemoverSettings = commonWartRemoverSettings ++
 lazy val populationWartRemoverSettings = commonWartRemoverSettings
 lazy val dataAccessWartRemoverSettings = commonWartRemoverSettings
 
-lazy val populationDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql) ++ Monix.toSeq
+lazy val populationDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql, Refined.core) ++ Monix.toSeq
 
 lazy val dataAccessDependencies = Seq(
   PostgreSQL.db,

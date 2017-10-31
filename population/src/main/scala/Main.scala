@@ -1,11 +1,11 @@
 import DAL.DbContext
 import DAL.DAO.{AccountDAO, CredentialDAO, OwnershipDAO, ProductDAO}
 import DAL.table._
-
+import eu.timepit.refined.api.RefType
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 import java.util.UUID
-
+import utility.RefinedTypes._
 import com.mohiva.play.silhouette.password.BCryptSha256PasswordHasher
 
 object Main extends App {
@@ -34,7 +34,12 @@ object Main extends App {
     .zip(credentialDetails)
     .map {
       case (id, v) =>
-        CredentialTable(id, v.hasher, v.password, v.salt)
+        CredentialTable(
+          Hasher.unsafeFrom(v.hasher),
+          HashedPassword.unsafeFrom(v.password),
+          v.salt,
+          id
+        )
     }
 
   val accountId = Seq(
@@ -43,8 +48,18 @@ object Main extends App {
   )
 
   val userDetails = Seq(
-    (AccountUsername("peter123"), "123@hotmail.com", "Peter", "Quill"),
-    (AccountUsername("wootwoot"), "345@hotmail", "Mike", "Json")
+    (
+      AccountUsername.unsafeFrom("peter123"),
+      AccountEmail.unsafeFrom("123@hotmail.com"),
+      RefType.applyRef[NonEmptyString].unsafeFrom("Peter"),
+      RefType.applyRef[NonEmptyString].unsafeFrom("Quill")
+    ),
+    (
+      AccountUsername.unsafeFrom("wootwoot"),
+      AccountEmail.unsafeFrom("345@hotmail"),
+      RefType.applyRef[NonEmptyString].unsafeFrom("Mike"),
+      RefType.applyRef[NonEmptyString].unsafeFrom("Json")
+    )
   )
 
   val accountEntities = accountId

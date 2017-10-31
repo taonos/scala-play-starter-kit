@@ -42,6 +42,8 @@ object Hasher extends Enum[Hasher] {
 
   val values = findValues
 
+  def unsafeFrom(v: String): Hasher = Hasher.withName(v)
+
   case object `Bcrypt-SHA256` extends Hasher with Lowercase
 }
 
