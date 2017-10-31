@@ -169,13 +169,6 @@ lazy val flywaySettings = Seq(
 //  flywayLocations := Seq("classpath:db/migration")
 )
 
-lazy val utility = (project in file("utility"))
-  .settings(commonSettings: _*)
-  .settings(commonWartRemoverSettings: _*)
-  .settings {
-    libraryDependencies ++= utilityDependencies
-  }
-
 lazy val `scala-play-starter-kit` = (project in file("."))
   .dependsOn(utility, `data_access`, configuration)
   .aggregate(utility, `data_access`, configuration)
@@ -186,6 +179,24 @@ lazy val `scala-play-starter-kit` = (project in file("."))
   }
   .enablePlugins(PlayScala)
   .enablePlugins(DockerPlugin)
+
+
+lazy val population = (project in file("population"))
+  .dependsOn(`data_access`, configuration)
+  .aggregate(`data_access`, configuration)
+  .settings(commonSettings: _*)
+  .settings(populationWartRemoverSettings: _*)
+  .settings {
+    libraryDependencies ++= populationDependencies
+  }
+
+
+lazy val utility = (project in file("utility"))
+  .settings(commonSettings: _*)
+  .settings(commonWartRemoverSettings: _*)
+  .settings {
+    libraryDependencies ++= utilityDependencies
+  }
 
 lazy val configuration = (project in file("configuration"))
   .settings(commonSettings: _*)
@@ -200,18 +211,9 @@ lazy val migration = (project in file("migration"))
   }
   .enablePlugins(FlywayPlugin)
 
-lazy val population = (project in file("population"))
-  .dependsOn(`data_access`, configuration)
-  .aggregate(`data_access`, configuration)
-  .settings(commonSettings: _*)
-  .settings(populationWartRemoverSettings: _*)
-  .settings {
-    libraryDependencies ++= populationDependencies
-  }
 
 lazy val `data_access` = (project in file("data_access"))
   .dependsOn(utility)
-  .aggregate(utility)
   .settings(commonSettings: _*)
   .settings(dataAccessWartRemoverSettings: _*)
   .settings {

@@ -1,4 +1,4 @@
-create table auth_token (
+create table account_activation_token (
   id UUID NOT NULL,
   account_id UUID NOT NULL,
   expiry TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -17,6 +17,6 @@ create table auth_token (
 --   EXECUTE PROCEDURE moddatetime (updated_at);
 
 CREATE TRIGGER user_ignore_created_at_on_update
-  BEFORE UPDATE ON auth_token
+  BEFORE UPDATE ON account_activation_token
   FOR EACH ROW
   EXECUTE PROCEDURE ignore_created_at_change();

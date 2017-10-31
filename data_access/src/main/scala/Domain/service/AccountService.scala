@@ -3,7 +3,12 @@ package Domain.service
 import javax.inject.{Inject, Singleton}
 
 import Domain.entity.Account
-import Domain.repository.{AccountEventBus, AccountRepository, AuthTokenRepository, CookieEnv}
+import Domain.repository.{
+  AccountActivationRepository,
+  AccountEventBus,
+  AccountRepository,
+  CookieEnv
+}
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -30,7 +35,7 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
                                silhouette: Silhouette[CookieEnv],
                                passwordHasherRegistry: PasswordHasherRegistry,
                                authInfoRepo: AuthInfoRepository,
-                               authTokenRepo: AuthTokenRepository,
+                               authTokenRepo: AccountActivationRepository,
                                credentialsProvider: CredentialsProvider,
                                clock: Clock,
                                accountEventBus: AccountEventBus,
@@ -95,7 +100,7 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                                silhouette: Silhouette[CookieEnv],
                                passwordHasherRegistry: PasswordHasherRegistry,
                                authInfoRepo: AuthInfoRepository,
-                               authTokenRepo: AuthTokenRepository,
+                               authTokenRepo: AccountActivationRepository,
                                credentialsProvider: CredentialsProvider,
                                clock: Clock,
                                accountEventBus: AccountEventBus,

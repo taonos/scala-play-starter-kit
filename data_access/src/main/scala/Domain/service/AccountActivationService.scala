@@ -3,15 +3,15 @@ package Domain.service
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
-import Domain.repository.AuthTokenRepository
+import Domain.repository.AccountActivationRepository
 
 /**
   * Handles actions to auth tokens.
   *
   */
 @Singleton
-class AuthTokenService @Inject()(
-    authTokenRepo: AuthTokenRepository
+class AccountActivationService @Inject()(
+    authTokenRepo: AccountActivationRepository
 ) {
 
   import scala.concurrent.duration._
