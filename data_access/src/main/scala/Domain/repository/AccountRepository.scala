@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 import DAL.DAO.{AccountCredentialDAO, AccountDAO, CredentialDAO}
 import DAL.DbContext
 import DAL.table._
-import Domain.entity.Account
+import Domain.entity.{Account, LoginProvider}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.api.util.PasswordInfo
@@ -34,7 +34,7 @@ class AccountRepository @Inject()(
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] =
     for {
       account <- accountCredentialDAO.findBy(loginInfoToAccountEmail(loginInfo))
-      r = account.map(accountCredentialTableToUser)
+      r = account.map(accountCredentialTableToUser(_, loginInfo))
     } yield r
 
   def createUser(username: UsernameString,
@@ -60,30 +60,36 @@ class AccountRepository @Inject()(
         } yield a
 
       }
-      .map(accountTableToUser)
+      .map(accountTableToUser(_, loginInfo))
   }
 
 }
 
 object AccountRepository {
 
-  private def accountTableToUser(v: AccountTable): Account =
+  @throws[IllegalArgumentException]
+  private def accountTableToUser(v: AccountTable, l: LoginInfo): Account =
     Account(
       v.id.value,
       v.username.value,
-      v.email.value
+      v.email.value,
+      LoginProvider.unsafeFrom(l.providerID, l.providerKey)
     )
 
-  private def accountCredentialTableToUser(v: AccountCredentialTable): Account =
+  @throws[IllegalArgumentException]
+  private def accountCredentialTableToUser(v: AccountCredentialTable, l: LoginInfo): Account =
     Account(
       v.accountId.value,
       v.username.value,
-      v.email.value
+      v.email.value,
+      LoginProvider.unsafeFrom(l.providerID, l.providerKey)
     )
 
+  @throws[IllegalArgumentException]
   private def loginInfoToAccountEmail(v: LoginInfo): AccountEmail =
     AccountEmail.unsafeFrom(v.providerKey)
 
+  @throws[IllegalArgumentException]
   private def passwordInfoToCredentialTable(v: PasswordInfo): CredentialTable =
     CredentialTable(
       Hasher.withName(v.hasher),

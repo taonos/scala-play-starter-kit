@@ -1,21 +1,19 @@
 package Domain.repository
 
 import javax.inject.{Inject, Singleton}
-import DAL.DAO.{AccountCredentialDAO}
-import DAL.DbContext
+import DAL.DAO.AccountCredentialDAO
 import DAL.table._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+import Domain.entity.Account
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class CredentialRepository @Inject()(
-    val ctx: DbContext,
-    accountCredentialDAO: AccountCredentialDAO
-)(implicit ec: ExecutionContext)
-    extends DelegableAuthInfoDAO[PasswordInfo] {
+class CredentialRepository @Inject()(accountCredentialDAO: AccountCredentialDAO)(
+    implicit ec: ExecutionContext
+) extends DelegableAuthInfoDAO[PasswordInfo] {
   import CredentialRepository._
 
   /**
@@ -27,6 +25,11 @@ class CredentialRepository @Inject()(
   override def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
     accountCredentialDAO
       .findBy(loginInfoToAccountEmail(loginInfo))
+      .map(_.flatMap(passwordInfoToAccountCredentialTable))
+
+  def find(account: Account): Future[Option[PasswordInfo]] =
+    accountCredentialDAO
+      .findBy(AccountId(account.id))
       .map(_.flatMap(passwordInfoToAccountCredentialTable))
 
   /**

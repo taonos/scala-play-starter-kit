@@ -1,8 +1,8 @@
-package util
+package util.authentication
 
 import com.mohiva.play.silhouette.api.actions.UnsecuredErrorHandler
-import play.api.mvc.{RequestHeader, Result}
 import play.api.mvc.Results.Redirect
+import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.Future
 

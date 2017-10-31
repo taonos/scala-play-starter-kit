@@ -32,7 +32,7 @@ import play.api.i18n.MessagesApi
 import play.api.mvc.CookieHeaderEncoding
 import pureconfig.error.ConfigReaderException
 import pureconfig.{loadConfigOrThrow, CamelCase, ConfigFieldMapping, ProductHint}
-import util.{CustomSecuredErrorHandler, CustomUnsecuredErrorHandler}
+import util.authentication.{CustomSecuredErrorHandler, CustomUnsecuredErrorHandler}
 
 import scala.concurrent.ExecutionContext
 
@@ -88,10 +88,9 @@ class SilhouetteModule extends AbstractModule {
 
   @Provides
   def provideDelegate(
-      ctx: DbContext,
       accountCredentialDAO: AccountCredentialDAO
   )(implicit ec: ExecutionContext): DelegableAuthInfoDAO[PasswordInfo] = {
-    new CredentialRepository(ctx, accountCredentialDAO)
+    new CredentialRepository(accountCredentialDAO)
   }
 
   //  @Provides

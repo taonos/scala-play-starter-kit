@@ -89,7 +89,7 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
   * @param silhouette
   * @param passwordHasherRegistry The password hasher registry.
   * @param authInfoRepo     The auth info repository implementation.
-  * @param authTokenRepo       The auth token repository implementation.
+  * @param accountActivationRepo       The auth token repository implementation.
   * @param credentialsProvider
   * @param clock                  The clock instance.
   * @param accountEventBus
@@ -100,7 +100,7 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                                silhouette: Silhouette[CookieEnv],
                                passwordHasherRegistry: PasswordHasherRegistry,
                                authInfoRepo: AuthInfoRepository,
-                               authTokenRepo: AccountActivationRepository,
+                               accountActivationRepo: AccountActivationRepository,
                                credentialsProvider: CredentialsProvider,
                                clock: Clock,
                                accountEventBus: AccountEventBus,
@@ -176,7 +176,7 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                                  loginInfo
                                )
                      authInfo <- authInfoRepo.add(loginInfo, passwordInfo)
-                     authToken <- authTokenRepo.create(account.id)
+                     _ <- accountActivationRepo.create(account.id)
                      // FIXME: something wrong with event bus???
 //                     _ <- accountEventBus.publishSignUpEvent(account, request)
                    } yield RegistrationSucceed(account)

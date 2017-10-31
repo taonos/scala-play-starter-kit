@@ -66,7 +66,10 @@ or unauthorized accesses to the appropriate landing pages.
 
 #### Adding authorization logic to secured endpoints
 
-
+Silhouette provides a way do add additional authorization logic to secured endpoints. This is done by implementing an 
+`Authorization` object that is passed to all `SecuredRequestHandler` and `SecuredAction` as a parameter. 
+`util.authentication.AllowProvider` checks whether a user logged in using a specific login provider. Could be useful for 
+only exposing contents to specific login method.
 
 ## PostgreSQL in Docker
 
