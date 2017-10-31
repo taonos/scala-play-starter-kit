@@ -45,6 +45,7 @@ object Hasher extends Enum[Hasher] {
   def unsafeFrom(v: String): Hasher = Hasher.withName(v)
 
   case object `Bcrypt-SHA256` extends Hasher with Lowercase
+  case object Bcrypt extends Hasher with Lowercase
 }
 
 /**

@@ -41,6 +41,33 @@ db.run(query[Record].drop(lift(offset)).take(lift(limit)))
 ```
 Also, you should avoid explicit typing your quotation with : `Quoted[...]` because it forces the quotation to be dynamic.
 
+### Authentication
+
+[Silhouette](https://www.silhouette.rocks) provides authentication for the application.
+
+#### Error handlers
+
+##### Global error handlers
+
+By default Silhouette provides default error handlers via Guice dependency injection. To disable the default error 
+handler, edit `application.conf` with the following content
+```hocon
+play.modules.disabled += "com.mohiva.play.silhouette.api.actions.SecuredErrorHandlerModule"
+```
+Please refer to the [list of error handlers](https://www.silhouette.rocks/docs/endpoints#section-list-of-error-handlers) 
+section for an overview of all available error handlers and their modules.
+
+Once the default handler module is disabled, you can bind your own implementation.
+
+Global custom error handlers, `CustomSecuredErrorHandler` and `CustomUnsecuredErrorHandler`, redirect unauthenticated 
+or unauthorized accesses to the appropriate landing pages.
+
+##### Local error handlers
+
+#### Adding authorization logic to secured endpoints
+
+
+
 ## PostgreSQL in Docker
 
 Run `docker-compose up -d` to launch a PostgreSQL instance for development. By default the database can be connected to 

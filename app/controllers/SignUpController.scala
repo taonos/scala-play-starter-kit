@@ -10,7 +10,6 @@ import Domain.service.AccountService
 import Domain.service.AccountService.{RegistrationSucceed, UserAlreadyExists}
 import forms.SignUpForm
 import eu.timepit.refined.auto._
-
 import scala.concurrent.{ExecutionContext, Future}
 
 /**

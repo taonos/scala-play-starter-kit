@@ -6,7 +6,6 @@ import javax.inject._
 import play.api.mvc._
 import play.api.i18n.I18nSupport
 import com.mohiva.play.silhouette.api.{LogoutEvent, Silhouette}
-import com.mohiva.play.silhouette.api.actions.{SecuredRequest, UserAwareRequest}
 import org.webjars.play.WebJarsUtil
 import scala.concurrent.{ExecutionContext, Future}
 import Domain.repository.CookieEnv
@@ -30,12 +29,11 @@ class HomeController @Inject()(
     *
     * @return The result to display.
     */
-  def index = silhouette.UserAwareAction.async {
-    implicit request: UserAwareRequest[CookieEnv, AnyContent] =>
-      request.identity match {
-        case Some(v) => Future.successful(Ok(views.html.signedInHome(v)))
-        case None    => Future.successful(Ok(views.html.home()))
-      }
+  def index: Action[AnyContent] = silhouette.UserAwareAction.async { implicit req =>
+    req.identity match {
+      case Some(v) => Future.successful(Ok(views.html.signedInHome(v)))
+      case None    => Future.successful(Ok(views.html.home()))
+    }
 
   }
 
@@ -44,10 +42,9 @@ class HomeController @Inject()(
     *
     * @return The result to display.
     */
-  def signOut = silhouette.SecuredAction.async {
-    implicit request: SecuredRequest[CookieEnv, AnyContent] =>
-      val result = Redirect(routes.HomeController.index())
-      silhouette.env.eventBus.publish(LogoutEvent(request.identity, request))
-      silhouette.env.authenticatorService.discard(request.authenticator, result)
+  def signOut: Action[AnyContent] = silhouette.SecuredAction.async { implicit req =>
+    val result = Redirect(routes.HomeController.index())
+    silhouette.env.eventBus.publish(LogoutEvent(req.identity, req))
+    silhouette.env.authenticatorService.discard(req.authenticator, result)
   }
 }

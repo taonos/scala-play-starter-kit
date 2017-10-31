@@ -7,11 +7,6 @@
 GET         /                             controllers.HomeController.index
 GET         /signout                      controllers.HomeController.signOut
 
-# An example controller showing how to use dependency injection
-#GET     /count                      controllers.CountController.count
-# An example controller showing how to write asynchronous code
-#GET     /message                    controllers.AsyncController.message
-
 GET         /signup                       controllers.SignUpController.view
 POST        /signup                       controllers.SignUpController.submit
 

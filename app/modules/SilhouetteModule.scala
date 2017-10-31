@@ -6,6 +6,7 @@ import Domain.repository.{AccountRepository, CookieEnv, CredentialRepository}
 import Domain.service.RememberMeConfig
 import com.google.inject.name.Named
 import com.google.inject.{AbstractModule, Provides, TypeLiteral}
+import com.mohiva.play.silhouette.api.actions.{SecuredErrorHandler, UnsecuredErrorHandler}
 import com.mohiva.play.silhouette.api.crypto.{Crypter, CrypterAuthenticatorEncoder, Signer}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
@@ -27,9 +28,11 @@ import com.mohiva.play.silhouette.password.{BCryptPasswordHasher, BCryptSha256Pa
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import play.api.Configuration
+import play.api.i18n.MessagesApi
 import play.api.mvc.CookieHeaderEncoding
 import pureconfig.error.ConfigReaderException
 import pureconfig.{loadConfigOrThrow, CamelCase, ConfigFieldMapping, ProductHint}
+import util.{CustomSecuredErrorHandler, CustomUnsecuredErrorHandler}
 
 import scala.concurrent.ExecutionContext
 
@@ -39,6 +42,7 @@ class SilhouetteModule extends AbstractModule {
   override def configure() = {
     bind(new TypeLiteral[Silhouette[CookieEnv]] {})
       .to(new TypeLiteral[SilhouetteProvider[CookieEnv]] {})
+    bind(classOf[UnsecuredErrorHandler]).toInstance(new CustomUnsecuredErrorHandler)
     bind(classOf[FingerprintGenerator]).toInstance(new DefaultFingerprintGenerator(false))
     bind(classOf[com.mohiva.play.silhouette.api.util.Clock])
       .toInstance(com.mohiva.play.silhouette.api.util.Clock())
@@ -47,6 +51,10 @@ class SilhouetteModule extends AbstractModule {
 
     ()
   }
+
+  @Provides
+  def provideSecuredErrorHandler(messagesApi: MessagesApi): SecuredErrorHandler =
+    new CustomSecuredErrorHandler(messagesApi)
 
   @Provides
   def provideIDGenerator(
@@ -81,8 +89,6 @@ class SilhouetteModule extends AbstractModule {
   @Provides
   def provideDelegate(
       ctx: DbContext,
-      //                      accountDAO: AccountDAO,
-      //                      credentialDAO: CredentialDAO,
       accountCredentialDAO: AccountCredentialDAO
   )(implicit ec: ExecutionContext): DelegableAuthInfoDAO[PasswordInfo] = {
     new CredentialRepository(ctx, accountCredentialDAO)
