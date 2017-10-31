@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 import DAL.DAO.AccountActivationTokenDAO
 import DAL.table.{AccountActivationTokenId, AccountActivationTokenTable, AccountId}
 import Domain.entity
-import Domain.entity.AuthToken
+import Domain.entity.AccountActivationToken
 import com.mohiva.play.silhouette.api.util.Clock
 import org.joda.time.DateTimeZone
 import shapeless.tag
@@ -26,8 +26,8 @@ class AccountActivationRepository @Inject()(authTokenDAO: AccountActivationToken
     */
   def create(userID: UUID,
              expiry: FiniteDuration = 5.minutes): Future[AccountActivationTokenTable] = {
-    val token = AuthToken(
-      tag[entity.AuthTokenId][UUID](UUID.randomUUID()),
+    val token = AccountActivationToken(
+      tag[entity.AccountActivationTokenId][UUID](UUID.randomUUID()),
       userID,
       clock.now.withZone(DateTimeZone.UTC).plusSeconds(expiry.toSeconds.toInt)
     )
@@ -45,7 +45,7 @@ class AccountActivationRepository @Inject()(authTokenDAO: AccountActivationToken
 }
 
 object AccountActivationRepository {
-  private def authTokenToAuthTable(v: AuthToken) = {
+  private def authTokenToAuthTable(v: AccountActivationToken) = {
     AccountActivationTokenTable(
       AccountActivationTokenId(v.id: UUID),
       AccountId(v.userID: UUID),
