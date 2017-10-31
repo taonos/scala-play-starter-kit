@@ -1,64 +1,42 @@
-import DAL.DAO.{AccountCredentialDAO, AccountDAO, CredentialDAO}
+package modules
+
+import DAL.DAO.AccountCredentialDAO
 import DAL.DbContext
+import Domain.repository.{AccountRepository, CookieEnv, CredentialRepository}
+import Domain.service.RememberMeConfig
+import com.google.inject.name.Named
 import com.google.inject.{AbstractModule, Provides, TypeLiteral}
+import com.mohiva.play.silhouette.api.crypto.{Crypter, CrypterAuthenticatorEncoder, Signer}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.util.{PasswordHasherRegistry, PasswordInfo}
+import com.mohiva.play.silhouette.api.services.AuthenticatorService
+import com.mohiva.play.silhouette.api.util._
+import com.mohiva.play.silhouette.api.{Environment, EventBus, Silhouette, SilhouetteProvider}
 import com.mohiva.play.silhouette.crypto.{
   JcaCrypter,
   JcaCrypterSettings,
   JcaSigner,
   JcaSignerSettings
 }
-import com.mohiva.play.silhouette.impl.providers.{OAuth1Info, OAuth2Info, OpenIDInfo}
-import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}
-import com.mohiva.play.silhouette.password.{BCryptPasswordHasher, BCryptSha256PasswordHasher}
-import com.mohiva.play.silhouette.persistence.daos.{DelegableAuthInfoDAO, InMemoryAuthInfoDAO}
-import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
-import pureconfig.error.ConfigReaderException
-import Domain.service._
-import Domain.repository._
-import com.google.inject.name.Named
-import com.mohiva.play.silhouette.api.crypto.{Crypter, CrypterAuthenticatorEncoder, Signer}
-import com.mohiva.play.silhouette.api.services.AuthenticatorService
-import com.mohiva.play.silhouette.api.util.{Clock, FingerprintGenerator, IDGenerator}
-import com.mohiva.play.silhouette.api.{Environment, EventBus, Silhouette, SilhouetteProvider}
 import com.mohiva.play.silhouette.impl.authenticators.{
   CookieAuthenticator,
   CookieAuthenticatorService,
   CookieAuthenticatorSettings
 }
-import Domain.service.RememberMeConfig
+import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}
+import com.mohiva.play.silhouette.password.{BCryptPasswordHasher, BCryptSha256PasswordHasher}
+import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import play.api.Configuration
 import play.api.mvc.CookieHeaderEncoding
-import pureconfig._
-import utility.ExecutionContextFactory
+import pureconfig.error.ConfigReaderException
+import pureconfig.{loadConfigOrThrow, CamelCase, ConfigFieldMapping, ProductHint}
 
 import scala.concurrent.ExecutionContext
 
-/**
-  * This class is a Guice module that tells Guice how to bind several
-  * different types. This Guice module is created when the Play
-  * application starts.
-
-  * Play will automatically use any class called `Module` that is in
-  * the root package. You can create modules in other locations by
-  * adding `play.modules.enabled` settings to the `application.conf`
-  * configuration file.
-  */
-class Module extends AbstractModule {
-  import Domain.repository.CookieEnv
-  import Module._
+class SilhouetteModule extends AbstractModule {
+  import SilhouetteModule._
 
   override def configure() = {
-
-    // Use the system clock as the default implementation of Clock
-//    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone)
-    // Ask Guice to create an instance of ApplicationTimer when the
-    // application starts.
-//    bind(classOf[ApplicationTimer]).asEagerSingleton()
-    // Set AtomicCounter as the implementation for Counter.
-//    bind(classOf[Counter]).to(classOf[AtomicCounter])
-
     bind(new TypeLiteral[Silhouette[CookieEnv]] {})
       .to(new TypeLiteral[SilhouetteProvider[CookieEnv]] {})
     bind(classOf[FingerprintGenerator]).toInstance(new DefaultFingerprintGenerator(false))
@@ -69,10 +47,6 @@ class Module extends AbstractModule {
 
     ()
   }
-
-  @Provides
-  @Named("cpu-execution-context")
-  def provideCPUExecutionContext: ExecutionContext = ExecutionContextFactory.cpuExecutionContext
 
   @Provides
   def provideIDGenerator(
@@ -107,17 +81,17 @@ class Module extends AbstractModule {
   @Provides
   def provideDelegate(
       ctx: DbContext,
-//                      accountDAO: AccountDAO,
-//                      credentialDAO: CredentialDAO,
+      //                      accountDAO: AccountDAO,
+      //                      credentialDAO: CredentialDAO,
       accountCredentialDAO: AccountCredentialDAO
   )(implicit ec: ExecutionContext): DelegableAuthInfoDAO[PasswordInfo] = {
     new CredentialRepository(ctx, accountCredentialDAO)
   }
 
-//  @Provides
-//  def provideOAuth2InfoDelegableAuthInfoDAO: DelegableAuthInfoDAO[OAuth2Info] = {
-//    new InMemoryAuthInfoDAO[OAuth2Info]
-//  }
+  //  @Provides
+  //  def provideOAuth2InfoDelegableAuthInfoDAO: DelegableAuthInfoDAO[OAuth2Info] = {
+  //    new InMemoryAuthInfoDAO[OAuth2Info]
+  //  }
 
   /**
     * Provides the auth info repository.
@@ -157,11 +131,6 @@ class Module extends AbstractModule {
 
     new JcaSigner(config)
   }
-
-//  @Provides
-//  @Named("i/o execution context")
-//  def provideIOExecutionContext: ExecutionContext =
-//    ExecutionContextFactory.ioExecutionContext
 
   /**
     * Provides the crypter for the authenticator.
@@ -224,7 +193,7 @@ class Module extends AbstractModule {
   }
 }
 
-object Module {
+object SilhouetteModule {
 
   /**
     * Provides hint to extract configurations using camel case.
