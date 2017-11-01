@@ -9,8 +9,9 @@ import Domain.repository.{
   AccountRepository,
   CookieEnv
 }
+import Domain.service.AccountService.{Authenticated, InvalidPassword, SignInStatus, UserNotFound}
 import com.mohiva.play.silhouette.api.Authenticator.Implicits._
-import com.mohiva.play.silhouette.api.{LoginEvent, LoginInfo, Silhouette}
+import com.mohiva.play.silhouette.api.{LoginInfo, Silhouette}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.{Clock, Credentials, PasswordHasherRegistry}
 import com.mohiva.play.silhouette.impl.exceptions.{
@@ -18,8 +19,6 @@ import com.mohiva.play.silhouette.impl.exceptions.{
   InvalidPasswordException
 }
 import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.collection.NonEmpty
 import play.api.mvc.{AnyContent, Request, Result}
 import utility.RefinedTypes.{EmailString, UsernameString}
 
@@ -34,50 +33,85 @@ final case class RememberMeConfig(cookieMaxAge: FiniteDuration,
 class AccountManager @Inject()(accountRepo: AccountRepository,
                                silhouette: Silhouette[CookieEnv],
                                passwordHasherRegistry: PasswordHasherRegistry,
-                               authInfoRepo: AuthInfoRepository,
-                               authTokenRepo: AccountActivationRepository,
+//                               authInfoRepo: AuthInfoRepository,
+                               accountActivationRepo: AccountActivationRepository,
                                credentialsProvider: CredentialsProvider,
                                clock: Clock,
-                               accountEventBus: AccountEventBus,
                                rememberMeConfig: RememberMeConfig) {
 
   import Domain.entity.command.UserRegistrationByPassword
   import Domain.entity.AccountStatus
   import AccountStatus._
+  import eu.timepit.refined.auto._
 
   def register(
       command: UserRegistrationByPassword
-  )(implicit ec: ExecutionContext, request: play.api.mvc.RequestHeader): Future[AccountStatus] = {
+  )(implicit ec: ExecutionContext): Future[AccountStatus] = {
 
     val loginInfo = LoginInfo(credentialsProvider.id, command.email.value)
 
     for {
       userRetrieved <- accountRepo
-                        .retrieve(loginInfo)
-      result <- userRetrieved match {
-                 // account is already registered within the system
-                 case Some(_) => Future.successful(AlreadyExists)
+        .retrieve(loginInfo)
+      a = userRetrieved.fold[AccountStatus](NotRegistered)(_ => AlreadyExists)
+      result <- a match {
+        // save account info
+        case NotRegistered =>
+          val passwordInfo = passwordHasherRegistry.current.hash(command.password)
 
-                 // save account info
-                 case None =>
-                   val passwordInfo = passwordHasherRegistry.current.hash(command.password.value)
+          for {
+            account <- accountRepo.createUser(
+              command.username,
+              command.email,
+              command.firstname.value,
+              command.lastname.value,
+              passwordInfo,
+              loginInfo
+            )
+//            _ <- authInfoRepo.add(loginInfo, passwordInfo)
+            authToken <- accountActivationRepo.create(account.id)
+          } yield Registered(account)
 
-                   for {
-                     account <- accountRepo.createUser(
-                                 command.username,
-                                 command.email,
-                                 command.firstname.value,
-                                 command.lastname.value,
-                                 passwordInfo,
-                                 loginInfo
-                               )
-                     authInfo <- authInfoRepo.add(loginInfo, passwordInfo)
-                     authToken <- authTokenRepo.create(account.id)
-                     // FIXME: something wrong with event bus???
-                     //                     _ <- accountEventBus.publishSignUpEvent(account, request)
-                   } yield Registered(account)
-               }
+        // account is already registered within the system
+        case v => Future.successful(v)
+      }
     } yield result
+
+  }
+
+  def signIn(email: String, password: String, rememberMe: Boolean, response: Result)(
+      implicit ec: ExecutionContext,
+      request: Request[AnyContent]
+  ): Future[SignInStatus] = {
+    val credentials = Credentials(email, password)
+
+    val res = for {
+      loginInfo <- credentialsProvider.authenticate(credentials)
+      retrieved <- accountRepo.retrieve(loginInfo)
+      user <- retrieved match {
+        case None    => Future.failed(new IdentityNotFoundException("Account not found!"))
+        case Some(v) => Future.successful(v)
+      }
+      cookieAuth <- silhouette.env.authenticatorService
+        .create(loginInfo)
+        .map {
+          case authenticator if rememberMe =>
+            authenticator.copy(
+              expirationDateTime = clock.now + rememberMeConfig.authenticatorExpiry,
+              idleTimeout = Some(rememberMeConfig.authenticatorIdleTimeout),
+              cookieMaxAge = Some(rememberMeConfig.cookieMaxAge)
+            )
+          case authenticator => authenticator
+        }
+      cookie <- silhouette.env.authenticatorService.init(cookieAuth)
+      authResult <- silhouette.env.authenticatorService.embed(cookie, response)
+    } yield Authenticated(authResult)
+
+    res
+      .recover {
+        case _: InvalidPasswordException  => InvalidPassword
+        case _: IdentityNotFoundException => UserNotFound
+      }
 
   }
 }
@@ -88,7 +122,6 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
   * @param accountRepo The Account repository.
   * @param silhouette
   * @param passwordHasherRegistry The password hasher registry.
-  * @param authInfoRepo     The auth info repository implementation.
   * @param accountActivationRepo       The auth token repository implementation.
   * @param credentialsProvider
   * @param clock                  The clock instance.
@@ -98,7 +131,6 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
 class AccountService @Inject()(accountRepo: AccountRepository,
                                silhouette: Silhouette[CookieEnv],
                                passwordHasherRegistry: PasswordHasherRegistry,
-                               authInfoRepo: AuthInfoRepository,
                                accountActivationRepo: AccountActivationRepository,
                                credentialsProvider: CredentialsProvider,
                                clock: Clock,
@@ -115,20 +147,20 @@ class AccountService @Inject()(accountRepo: AccountRepository,
       loginInfo <- credentialsProvider.authenticate(credentials)
       retrieved <- accountRepo.retrieve(loginInfo)
       user <- retrieved match {
-               case None    => Future.failed(new IdentityNotFoundException("Account not found!"))
-               case Some(v) => Future.successful(v)
-             }
+        case None    => Future.failed(new IdentityNotFoundException("Account not found!"))
+        case Some(v) => Future.successful(v)
+      }
       cookieAuth <- silhouette.env.authenticatorService
-                     .create(loginInfo)
-                     .map {
-                       case authenticator if rememberMe =>
-                         authenticator.copy(
-                           expirationDateTime = clock.now + rememberMeConfig.authenticatorExpiry,
-                           idleTimeout = Some(rememberMeConfig.authenticatorIdleTimeout),
-                           cookieMaxAge = Some(rememberMeConfig.cookieMaxAge)
-                         )
-                       case authenticator => authenticator
-                     }
+        .create(loginInfo)
+        .map {
+          case authenticator if rememberMe =>
+            authenticator.copy(
+              expirationDateTime = clock.now + rememberMeConfig.authenticatorExpiry,
+              idleTimeout = Some(rememberMeConfig.authenticatorIdleTimeout),
+              cookieMaxAge = Some(rememberMeConfig.cookieMaxAge)
+            )
+          case authenticator => authenticator
+        }
       cookie <- silhouette.env.authenticatorService.init(cookieAuth)
       authResult <- silhouette.env.authenticatorService.embed(cookie, response)
     } yield Authenticated(authResult)
@@ -154,30 +186,29 @@ class AccountService @Inject()(accountRepo: AccountRepository,
 
     for {
       userRetrieved <- accountRepo
-                        .retrieve(loginInfo)
+        .retrieve(loginInfo)
       result <- userRetrieved match {
-                 // account is already registered within the system
-                 case Some(_) => Future.successful(UserAlreadyExists)
+        // account is already registered within the system
+        case Some(_) => Future.successful(UserAlreadyExists)
 
-                 // save account info
-                 case None =>
-                   val passwordInfo = passwordHasherRegistry.current.hash(password)
+        // save account info
+        case None =>
+          val passwordInfo = passwordHasherRegistry.current.hash(password)
 
-                   for {
-                     account <- accountRepo.createUser(
-                                 username,
-                                 email,
-                                 firstname,
-                                 lastname,
-                                 passwordInfo,
-                                 loginInfo
-                               )
-                     authInfo <- authInfoRepo.add(loginInfo, passwordInfo)
-                     _ <- accountActivationRepo.create(account.id)
-                     // FIXME: something wrong with event bus???
+          for {
+            account <- accountRepo.createUser(
+              username,
+              email,
+              firstname,
+              lastname,
+              passwordInfo,
+              loginInfo
+            )
+            _ <- accountActivationRepo.create(account.id)
+            // FIXME: something wrong with event bus???
 //                     _ <- accountEventBus.publishSignUpEvent(account, request)
-                   } yield RegistrationSucceed(account)
-               }
+          } yield RegistrationSucceed(account)
+      }
     } yield result
 
   }

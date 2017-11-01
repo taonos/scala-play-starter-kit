@@ -31,7 +31,7 @@ class AccountRepository @Inject()(
     * @param loginInfo The login info to retrieve a user.
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
-  def retrieve(loginInfo: LoginInfo): Future[Option[Account]] =
+  override def retrieve(loginInfo: LoginInfo): Future[Option[Account]] =
     for {
       account <- accountCredentialDAO.findBy(loginInfoToAccountEmail(loginInfo))
       r = account.map(accountCredentialTableToUser(_, loginInfo))
@@ -43,20 +43,21 @@ class AccountRepository @Inject()(
                  lastname: String,
                  passwordInfo: PasswordInfo,
                  loginInfo: LoginInfo): Future[Account] = {
+
     ctx
       .transaction[AccountTable] { implicit c =>
         for {
           c <- credentialDAO.insert(passwordInfoToCredentialTable(passwordInfo))
           a <- accountDAO.insert(
-                AccountTable(
-                  new AccountId,
-                  AccountUsername(username),
-                  AccountEmail(email),
-                  RefType.applyRef[NonEmptyString].unsafeFrom(firstname),
-                  RefType.applyRef[NonEmptyString].unsafeFrom(lastname),
-                  Some(c.id)
-                )
-              )
+            AccountTable(
+              new AccountId,
+              AccountUsername(username),
+              AccountEmail(email),
+              RefType.applyRef[NonEmptyString].unsafeFrom(firstname),
+              RefType.applyRef[NonEmptyString].unsafeFrom(lastname),
+              Some(c.id)
+            )
+          )
         } yield a
 
       }

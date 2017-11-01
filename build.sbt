@@ -123,7 +123,8 @@ lazy val dataAccessDependencies = Seq(
   Shapeless.core,
   JodaTime.core,
   Enumeratum.core,
-  Refined.core
+  Refined.core,
+  CatsEffect.core
 ) ++ Monix.toSeq ++ Silhouette.toSeq
 
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
@@ -180,7 +181,6 @@ lazy val `scala-play-starter-kit` = (project in file("."))
   .enablePlugins(PlayScala)
   .enablePlugins(DockerPlugin)
 
-
 lazy val population = (project in file("population"))
   .dependsOn(`data_access`, configuration)
   .aggregate(`data_access`, configuration)
@@ -189,7 +189,6 @@ lazy val population = (project in file("population"))
   .settings {
     libraryDependencies ++= populationDependencies
   }
-
 
 lazy val utility = (project in file("utility"))
   .settings(commonSettings: _*)
@@ -210,7 +209,6 @@ lazy val migration = (project in file("migration"))
     libraryDependencies ++= migrationDependencies
   }
   .enablePlugins(FlywayPlugin)
-
 
 lazy val `data_access` = (project in file("data_access"))
   .dependsOn(utility)

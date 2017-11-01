@@ -1,8 +1,9 @@
 package DAL.DAO
 
 import DAL.DbContext
-import DAL.table.{AccountId, AccountTable, AccountUsername, CredentialId}
+import DAL.table._
 import javax.inject.{Inject, Singleton}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -18,6 +19,10 @@ class AccountDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
     table.filter(_.id == id)
   }
 
+  private val filterByEmail = quote { (email: AccountEmail) =>
+    table.filter(_.email == email)
+  }
+
   def findAll: Future[Seq[AccountTable]] =
     run(table)
 
@@ -29,6 +34,9 @@ class AccountDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
   def findBy(username: AccountUsername): Future[Option[AccountTable]] =
     run(table.filter(_.username == lift(username)))
       .map(_.headOption)
+
+  def findBy(email: AccountEmail): Future[Option[AccountTable]] =
+    run(filterByEmail(lift(email))).map(_.headOption)
 
   private val insertQuote = quote { (row: AccountTable) =>
     table.insert(row)

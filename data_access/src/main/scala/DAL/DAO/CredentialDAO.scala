@@ -42,4 +42,7 @@ class CredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext)
           _.hashedPassword -> lift(password)
         })
     )
+
+  def deleteBy(id: CredentialId): Future[Unit] =
+    run(filterById(lift(id)).delete).map(_ => ())
 }

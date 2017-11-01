@@ -11,9 +11,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class AccountCredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
   import ctx._
 
-  private implicit val updateExclusion =
-    updateMeta[AccountCredentialTable](_.username, _.email)
-
   val table = quote(querySchema[AccountCredentialTable]("account_credential"))
 
   private val filterById = quote { (id: AccountId) =>
@@ -28,37 +25,15 @@ class AccountCredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionC
     table.filter(_.email == u)
   }
 
+  def existOne(email: AccountEmail): Future[Boolean] =
+    run(filterByEmail(lift(email)).size).map {
+      case 1 => true
+      case _ => false
+    }
+
   def findBy(pk: AccountId): Future[Option[AccountCredentialTable]] =
     run(filterById(lift(pk))).map(_.headOption)
 
   def findBy(email: AccountEmail): Future[Option[AccountCredentialTable]] =
     run(filterByEmail(lift(email))).map(_.headOption)
-
-//  def insert(row: AccountCredentialTable): Future[AccountCredentialTable] =
-//    run(quote {
-//      table.insert(lift(row))
-//    }).map(_ => row)
-
-  def update(row: AccountCredentialTable): Future[AccountCredentialTable] =
-    run(quote {
-      table.update(lift(row))
-    }).map(_ => row)
-
-  def updatePassword(id: AccountId,
-                     hasher: Hasher,
-                     hashedPassword: HashedPassword,
-                     salt: Option[String]): Future[Long] =
-    run(filterById(lift(id)).update({ v =>
-      v.hasher -> lift(Option(hasher))
-    }, { v =>
-      v.hashedPassword -> lift(Option(hashedPassword))
-    }, { v =>
-      v.salt -> lift(salt)
-    }))
-
-  def deleteBy(pk: AccountId): Future[Unit] =
-    run(filterById(lift(pk)).delete).map(_ => ())
-
-  def deleteBy(email: AccountEmail): Future[Unit] =
-    run(filterByEmail(lift(email)).delete).map(_ => ())
 }

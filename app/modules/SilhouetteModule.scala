@@ -1,6 +1,6 @@
 package modules
 
-import DAL.DAO.AccountCredentialDAO
+import DAL.DAO.{AccountCredentialDAO, AccountDAO, CredentialDAO}
 import DAL.DbContext
 import Domain.repository.{AccountRepository, CookieEnv, CredentialRepository}
 import Domain.service.RememberMeConfig
@@ -87,10 +87,10 @@ class SilhouetteModule extends AbstractModule {
   }
 
   @Provides
-  def provideDelegate(
-      accountCredentialDAO: AccountCredentialDAO
-  )(implicit ec: ExecutionContext): DelegableAuthInfoDAO[PasswordInfo] = {
-    new CredentialRepository(accountCredentialDAO)
+  def provideDelegate(ctx: DbContext, accountDAO: AccountDAO, credentialDAO: CredentialDAO)(
+      implicit ec: ExecutionContext
+  ): DelegableAuthInfoDAO[PasswordInfo] = {
+    new CredentialRepository(ctx, accountDAO, credentialDAO)
   }
 
   //  @Provides

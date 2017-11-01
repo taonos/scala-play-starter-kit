@@ -32,8 +32,9 @@ object LoginProvider {
 
   @throws[IllegalArgumentException]
   def unsafeFrom(provider: String, key: String): LoginProvider = provider match {
-    case s if s == "Credentials" => Credentials.unsafeFrom(key)
-    case _                       => throw new IllegalArgumentException("Invalid path")
+    case "credentials" => Credentials.unsafeFrom(key)
+    // TODO: perhaps log the invalid input??
+    case _ => throw new IllegalArgumentException("Invalid path")
   }
 }
 

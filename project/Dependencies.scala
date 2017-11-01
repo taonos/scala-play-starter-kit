@@ -74,6 +74,10 @@ object Dependencies {
       val core: ModuleID = "org.typelevel" %% "cats-core" % "0.9.0"
     }
 
+    object CatsEffect {
+      val core: ModuleID = "org.typelevel" %% "cats-effect" % "0.4"
+    }
+
     object FlywayDB {
       val core: ModuleID = "org.flywaydb" % "flyway-core" % "4.2.0"
       val play: ModuleID = "org.flywaydb" %% "flyway-play" % "4.0.0"

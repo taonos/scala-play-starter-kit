@@ -29,6 +29,10 @@ object HashedPassword {
 
   def unsafeFrom(v: String): HashedPassword =
     HashedPassword(RefType.applyRef[NonEmptyString].unsafeFrom(v))
+
+  object auto {
+    implicit def stringToHashedPassword(v: String): HashedPassword = unsafeFrom(v)
+  }
 }
 
 sealed trait Hasher extends EnumEntry

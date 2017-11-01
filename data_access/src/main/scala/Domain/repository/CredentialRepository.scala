@@ -1,17 +1,22 @@
 package Domain.repository
 
 import javax.inject.{Inject, Singleton}
-import DAL.DAO.AccountCredentialDAO
+
+import DAL.DAO.{AccountDAO, CredentialDAO}
+import DAL.DbContext
 import DAL.table._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
-import Domain.entity.Account
+import cats.data.OptionT
+import cats.implicits._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class CredentialRepository @Inject()(accountCredentialDAO: AccountCredentialDAO)(
+class CredentialRepository @Inject()(val ctx: DbContext,
+                                     accountDAO: AccountDAO,
+                                     credentialDAO: CredentialDAO)(
     implicit ec: ExecutionContext
 ) extends DelegableAuthInfoDAO[PasswordInfo] {
   import CredentialRepository._
@@ -22,15 +27,18 @@ class CredentialRepository @Inject()(accountCredentialDAO: AccountCredentialDAO)
     * @param loginInfo The linked login info.
     * @return The retrieved auth info or None if no auth info could be retrieved for the given login info.
     */
-  override def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] =
-    accountCredentialDAO
-      .findBy(loginInfoToAccountEmail(loginInfo))
-      .map(_.flatMap(passwordInfoToAccountCredentialTable))
+  override def find(loginInfo: LoginInfo): Future[Option[PasswordInfo]] = {
+    ctx.transaction { implicit tec =>
+      val res = for {
+        accTable <- OptionT(accountDAO.findBy(loginInfoToAccountEmail(loginInfo)))
+        id <- OptionT.fromOption[Future](accTable.credentialId)
+        credentialTable <- OptionT(credentialDAO.findBy(id))
+        password = credentialTableToPasswordInfo(credentialTable)
+      } yield password
 
-  def find(account: Account): Future[Option[PasswordInfo]] =
-    accountCredentialDAO
-      .findBy(AccountId(account.id))
-      .map(_.flatMap(passwordInfoToAccountCredentialTable))
+      res.value
+    }
+  }
 
   /**
     * Adds new auth info for the given login info.
@@ -39,27 +47,10 @@ class CredentialRepository @Inject()(accountCredentialDAO: AccountCredentialDAO)
     * @param authInfo The auth info to add.
     * @return The added auth info.
     */
+  @deprecated("user `save` to add or update password")
   override def add(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] = {
-    _update(loginInfo: LoginInfo, authInfo: PasswordInfo)
+    save(loginInfo: LoginInfo, authInfo: PasswordInfo)
   }
-
-  private def _update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] =
-    for {
-      account <- accountCredentialDAO.findBy(loginInfoToAccountEmail(loginInfo))
-      row = account.map(
-        _.copy(
-          credentialId = Option(new CredentialId),
-          hasher = Option(Hasher.withName(authInfo.hasher)),
-          hashedPassword = Option(HashedPassword.unsafeFrom(authInfo.password)),
-          salt = authInfo.salt
-        )
-      )
-      _ <- row match {
-            case None    => Future.failed(new IdentityNotFoundException("Account not found!"))
-            case Some(v) => accountCredentialDAO.update(v)
-          }
-      res <- Future.successful(authInfo)
-    } yield res
 
   /**
     * Updates the auth info for the given login info.
@@ -68,8 +59,9 @@ class CredentialRepository @Inject()(accountCredentialDAO: AccountCredentialDAO)
     * @param authInfo The auth info to update.
     * @return The updated auth info.
     */
+  @deprecated("user `save` to add or update password")
   override def update(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] = {
-    _update(loginInfo: LoginInfo, authInfo: PasswordInfo)
+    save(loginInfo: LoginInfo, authInfo: PasswordInfo)
   }
 
   /**
@@ -83,10 +75,39 @@ class CredentialRepository @Inject()(accountCredentialDAO: AccountCredentialDAO)
     * @return The saved auth info.
     */
   override def save(loginInfo: LoginInfo, authInfo: PasswordInfo): Future[PasswordInfo] = {
-    // TODO: if only the save function is called, then add and update function can be optimized, possibly. This function needs optimization too.
-    find(loginInfo).flatMap {
-      case Some(_) => update(loginInfo, authInfo)
-      case None    => add(loginInfo, authInfo)
+    val res = ctx.transaction { implicit tec =>
+      for {
+        acc <- accountDAO.findBy(loginInfoToAccountEmail(loginInfo))
+        cid = acc.flatMap(_.credentialId)
+        aid = acc.map(_.id)
+        res <- aid match {
+          case Some(aid) =>
+            cid match {
+              // if the user has a password already, update it.
+              case Some(cid) =>
+                for {
+                  _ <- credentialDAO.updatePassword(
+                    cid,
+                    Hasher.withName(authInfo.hasher),
+                    HashedPassword.unsafeFrom(authInfo.password),
+                    authInfo.salt
+                  )
+                } yield Some(())
+              // if the user does not have a password, insert a new credential and update account
+              case None =>
+                for {
+                  cred <- credentialDAO.insert(passwordInfoToCredentialTable(authInfo))
+                  _ <- accountDAO.update(aid, cred.id)
+                } yield Some(())
+            }
+          case None => Future.successful(None)
+        }
+      } yield res
+    }
+
+    res.flatMap {
+      case None    => Future.failed(new IdentityNotFoundException("User not found!"))
+      case Some(_) => Future.successful(authInfo)
     }
   }
 
@@ -96,19 +117,39 @@ class CredentialRepository @Inject()(accountCredentialDAO: AccountCredentialDAO)
     * @param loginInfo The login info for which the auth info should be removed.
     * @return A future to wait for the process to be completed.
     */
-  override def remove(loginInfo: LoginInfo): Future[Unit] =
-    accountCredentialDAO.deleteBy(loginInfoToAccountEmail(loginInfo))
+  override def remove(loginInfo: LoginInfo): Future[Unit] = {
+    ctx.transaction { implicit tec =>
+      val cid = for {
+        accTable <- OptionT(accountDAO.findBy(loginInfoToAccountEmail(loginInfo)))
+        id <- OptionT.fromOption[Future](accTable.credentialId)
+      } yield id
+
+      cid.value.flatMap {
+        case None     => Future.failed(new IdentityNotFoundException("User not found!"))
+        case Some(id) => credentialDAO.deleteBy(id)
+      }
+
+    }
+  }
 }
 
 object CredentialRepository {
 
-  private def passwordInfoToAccountCredentialTable(
-      v: AccountCredentialTable
-  ): Option[PasswordInfo] =
-    for {
-      hasher <- v.hasher
-      pw <- v.hashedPassword
-    } yield PasswordInfo(hasher.entryName, pw.value.value, v.salt)
+  import eu.timepit.refined.auto._
+
+  private def credentialTableToPasswordInfo(v: CredentialTable): PasswordInfo =
+    PasswordInfo(v.hasher.entryName, v.hashedPassword.value, v.salt)
+
+  private def passwordInfoToCredentialTable(v: PasswordInfo): CredentialTable =
+    CredentialTable(Hasher.withName(v.hasher), HashedPassword.unsafeFrom(v.password), v.salt)
+
+//  private def accountCredentialTableToPasswordInfo(
+//      v: AccountCredentialTable
+//  ): Option[PasswordInfo] =
+//    for {
+//      hasher <- v.hasher
+//      pw <- v.hashedPassword
+//    } yield PasswordInfo(hasher.entryName, pw.value.value, v.salt)
 
   private def loginInfoToAccountEmail(v: LoginInfo): AccountEmail =
     AccountEmail.unsafeFrom(v.providerKey)

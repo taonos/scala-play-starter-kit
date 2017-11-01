@@ -55,26 +55,26 @@ class SignUpController @Inject()(
         data => {
           for {
             registration <- accountService.register(
-                             data.username,
-                             data.email,
-                             data.firstName,
-                             data.lastName,
-                             data.password
-                           )
+              data.username,
+              data.email,
+              data.firstName,
+              data.lastName,
+              data.password
+            )
             res <- registration match {
-                    case UserAlreadyExists =>
-                      Future.successful(
-                        Redirect(routes.SignUpController.view())
-                          .flashing(
-                            "warning" -> "Account already exists. Please choose a different name."
-                          )
-                      )
-                    case RegistrationSucceed(_) =>
-                      Future.successful(
-                        Redirect(routes.SignInController.view())
-                          .flashing("info" -> "Sign up successful! Please sign in!")
-                      )
-                  }
+              case UserAlreadyExists =>
+                Future.successful(
+                  Redirect(routes.SignUpController.view())
+                    .flashing(
+                      "warning" -> "Account already exists. Please choose a different name."
+                    )
+                )
+              case RegistrationSucceed(_) =>
+                Future.successful(
+                  Redirect(routes.SignInController.view())
+                    .flashing("info" -> "Sign up successful! Please sign in!")
+                )
+            }
           } yield res
 
         }
