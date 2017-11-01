@@ -92,7 +92,6 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
   * @param accountActivationRepo       The auth token repository implementation.
   * @param credentialsProvider
   * @param clock                  The clock instance.
-  * @param accountEventBus
   * @param rememberMeConfig
   */
 @Singleton
@@ -103,7 +102,6 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                                accountActivationRepo: AccountActivationRepository,
                                credentialsProvider: CredentialsProvider,
                                clock: Clock,
-                               accountEventBus: AccountEventBus,
                                rememberMeConfig: RememberMeConfig) {
   import AccountService._
 
@@ -131,7 +129,6 @@ class AccountService @Inject()(accountRepo: AccountRepository,
                          )
                        case authenticator => authenticator
                      }
-      _ <- accountEventBus.publishSignInEvent(user, request)
       cookie <- silhouette.env.authenticatorService.init(cookieAuth)
       authResult <- silhouette.env.authenticatorService.embed(cookie, response)
     } yield Authenticated(authResult)

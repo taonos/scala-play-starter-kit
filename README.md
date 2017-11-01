@@ -13,7 +13,7 @@
 ## Libraries Used
 - Java8
 - Play Framework
-- Silhouette
+- [Silhouette](https://www.silhouette.rocks)
 - PostgreSQL
 - Flyway
 - Quill
@@ -43,7 +43,7 @@ Also, you should avoid explicit typing your quotation with : `Quoted[...]` becau
 
 ### Authentication
 
-[Silhouette](https://www.silhouette.rocks) provides authentication for the application.
+Silhouette provides authentication for the application.
 
 #### Error handlers
 
@@ -70,6 +70,13 @@ Silhouette provides a way do add additional authorization logic to secured endpo
 `Authorization` object that is passed to all `SecuredRequestHandler` and `SecuredAction` as a parameter. 
 `util.authentication.AllowProvider` checks whether a user logged in using a specific login provider. Could be useful for 
 only exposing contents to specific login method.
+
+#### Silhouette Events
+
+Silhouette provides several events and event handling based on 
+[Akka's Event Bus](http://doc.akka.io/docs/akka/2.2.4/scala/event-bus.html). Silhouette itself doesn't listen for events.
+It is up to developers to decide if an event is useful or not.
+
 
 ## PostgreSQL in Docker
 
