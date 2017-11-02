@@ -8,10 +8,10 @@ import Domain.service._
 import org.webjars.play.WebJarsUtil
 import play.api.i18n.{I18nSupport, Messages}
 import play.api.mvc._
+import utility.authentication.CookieService
 
 import scala.concurrent.{ExecutionContext, Future}
 import Domain.repository.CookieEnv
-import AccountService._
 
 /**
   * The `Sign In` controller.
@@ -28,6 +28,7 @@ class SignInController @Inject()(
     components: ControllerComponents,
     silhouette: Silhouette[CookieEnv],
     accountService: AccountService,
+    cookieService: CookieService
 )(
     implicit ec: ExecutionContext,
     webJarsUtil: WebJarsUtil,
@@ -49,23 +50,31 @@ class SignInController @Inject()(
     *
     * @return The result to display.
     */
-  def submit: Action[AnyContent] = silhouette.UnsecuredAction.async { implicit request =>
-    SignInForm.form.bindFromRequest.fold(
-      form => Future.successful(BadRequest(views.html.signIn(form))),
-      data => {
-        val result = Redirect(routes.HomeController.index())
-        accountService
-          .signIn(data.email, data.password, data.rememberMe, result)
-          .map {
-            case Authenticated(r) => r
-            case UserNotFound =>
-              Redirect(routes.SignInController.view())
-                .flashing("error" -> "Account not found")
-            case InvalidPassword =>
-              Redirect(routes.SignInController.view())
-                .flashing("error" -> "Invalid password")
-          }
-      }
-    )
+  def submit: Action[AnyContent] = {
+    import Domain.entity.SignInStatus._
+    silhouette.UnsecuredAction.async { implicit request =>
+      SignInForm.form.bindFromRequest.fold(
+        form => Future.successful(BadRequest(views.html.signIn(form))),
+        data => {
+          accountService
+            .signIn(data.email, data.password)
+            .flatMap {
+              case Success(acc) =>
+                cookieService
+                  .embedCookie(acc, data.rememberMe, Redirect(routes.HomeController.index()))
+              case UserNotFound =>
+                Future.successful(
+                  Redirect(routes.SignInController.view())
+                    .flashing("error" -> "Account not found")
+                )
+              case InvalidPassword =>
+                Future.successful(
+                  Redirect(routes.SignInController.view())
+                    .flashing("error" -> "Invalid password")
+                )
+            }
+        }
+      )
+    }
   }
 }

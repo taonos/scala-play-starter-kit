@@ -3,7 +3,7 @@ package modules
 import DAL.DAO.{AccountCredentialDAO, AccountDAO, CredentialDAO}
 import DAL.DbContext
 import Domain.repository.{AccountRepository, CookieEnv, CredentialRepository}
-import Domain.service.RememberMeConfig
+import utility.authentication.RememberMeConfig
 import com.google.inject.name.Named
 import com.google.inject.{AbstractModule, Provides, TypeLiteral}
 import com.mohiva.play.silhouette.api.actions.{SecuredErrorHandler, UnsecuredErrorHandler}
@@ -32,7 +32,7 @@ import play.api.i18n.MessagesApi
 import play.api.mvc.CookieHeaderEncoding
 import pureconfig.error.ConfigReaderException
 import pureconfig.{loadConfigOrThrow, CamelCase, ConfigFieldMapping, ProductHint}
-import util.authentication.{CustomSecuredErrorHandler, CustomUnsecuredErrorHandler}
+import utility.authentication.{CustomSecuredErrorHandler, CustomUnsecuredErrorHandler}
 
 import scala.concurrent.ExecutionContext
 

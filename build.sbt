@@ -114,7 +114,7 @@ lazy val rootWartRemoverSettings = commonWartRemoverSettings ++
 lazy val populationWartRemoverSettings = commonWartRemoverSettings
 lazy val dataAccessWartRemoverSettings = commonWartRemoverSettings
 
-lazy val populationDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql, Refined.core) ++ Monix.toSeq
+lazy val populationDependencies = Seq(PostgreSQL.db, Quill.asyncpostgresql, Refined.core)
 
 lazy val dataAccessDependencies = Seq(
   PostgreSQL.db,
@@ -125,7 +125,7 @@ lazy val dataAccessDependencies = Seq(
   Enumeratum.core,
   Refined.core,
   CatsEffect.core
-) ++ Monix.toSeq ++ Silhouette.toSeq
+) ++ Silhouette.toSeq
 
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
 
@@ -148,12 +148,11 @@ lazy val appDependencies = Seq(
   Bootstrap.core,
   PureConfig.core,
   Enumeratum.core,
-  Refined.core
+  Refined.core,
+  Enumeratum.core
 ) ++
-  Monix.toSeq ++
   Silhouette.toSeq ++
   Circe.toSeq ++
-  Enumeratum.toSeq ++
   WebJars.toSeq
 
 import org.flywaydb.sbt.FlywayPlugin._

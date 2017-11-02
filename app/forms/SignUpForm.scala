@@ -1,7 +1,6 @@
 package forms
 
 import eu.timepit.refined.api.RefType.applyRef
-import eu.timepit.refined.auto._
 import play.api.data.Form
 import play.api.data.Forms._
 import utility.RefinedTypes._
@@ -45,7 +44,8 @@ object SignUpForm {
 
     private[SignUpForm] def unapply(
         arg: SignUpData
-    ): Option[(String, String, String, String, String)] =
+    ): Option[(String, String, String, String, String)] = {
+      import eu.timepit.refined.auto._
       Some(
         (
           /**
@@ -59,6 +59,7 @@ object SignUpForm {
           arg.password
         )
       )
+    }
 
     private[SignUpForm] def fromForm(username: String,
                                      firstName: String,

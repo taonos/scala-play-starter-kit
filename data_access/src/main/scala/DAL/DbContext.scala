@@ -2,10 +2,8 @@ package DAL
 
 import javax.inject.{Inject, Singleton}
 
-import eu.timepit.refined.api.RefType
-import io.getquill.context.async.{AsyncContext, SqlTypes, TransactionalExecutionContext}
+import io.getquill.context.async.{AsyncContext, SqlTypes}
 import io.getquill.{ImplicitQuery, PostgresAsyncContext, PostgresEscape, SnakeCase}
-import monix.eval.Task
 import org.joda.time.{DateTime => JodaDateTime}
 import utility.QuillRefined
 
@@ -16,15 +14,7 @@ class DbContext @Inject()()
     with Encoder
     with Decoder
     with QuillRefined.Decoder
-    with QuillRefined.Encoder {
-
-  def transaction_task[T](f: TransactionalExecutionContext => Task[T]): Task[T] =
-    Task.deferFutureAction { implicit scheduler =>
-      transaction { a: TransactionalExecutionContext =>
-        f(a).runAsync
-      }
-    }
-}
+    with QuillRefined.Encoder {}
 
 // TODO: decoder and encoder for joda-time will be obsolete when quill 1.4.1 is released.
 

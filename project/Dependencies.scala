@@ -9,8 +9,8 @@ object Dependencies {
     val specs2 = "3.6.6"
     val silhouette = "5.0.0"
     val akka = "2.4.18"
-    val circe = "0.8.0"
-    val monix = "2.3.0"
+    val circe = "0.9.0-M2"
+    val monix = "3.0.0-M1"
   }
 
   object Library {
@@ -37,8 +37,7 @@ object Dependencies {
         core,
         passwordBcrypt,
         persistence,
-        cryptoJca,
-        testkit
+        cryptoJca
       )
     }
 
@@ -71,11 +70,11 @@ object Dependencies {
     }
 
     object Cats {
-      val core: ModuleID = "org.typelevel" %% "cats-core" % "0.9.0"
+      val core: ModuleID = "org.typelevel" %% "cats-core" % "1.0.0-RC1"
     }
 
     object CatsEffect {
-      val core: ModuleID = "org.typelevel" %% "cats-effect" % "0.4"
+      val core: ModuleID = "org.typelevel" %% "cats-effect" % "0.5"
     }
 
     object FlywayDB {

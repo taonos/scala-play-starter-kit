@@ -1,4 +1,4 @@
-package util.authentication
+package utility.authentication
 
 import Domain.entity.Account
 import com.mohiva.play.silhouette.api.{Authenticator, Authorization}

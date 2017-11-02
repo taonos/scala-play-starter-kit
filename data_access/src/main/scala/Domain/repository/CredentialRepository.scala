@@ -143,14 +143,6 @@ object CredentialRepository {
   private def passwordInfoToCredentialTable(v: PasswordInfo): CredentialTable =
     CredentialTable(Hasher.withName(v.hasher), HashedPassword.unsafeFrom(v.password), v.salt)
 
-//  private def accountCredentialTableToPasswordInfo(
-//      v: AccountCredentialTable
-//  ): Option[PasswordInfo] =
-//    for {
-//      hasher <- v.hasher
-//      pw <- v.hashedPassword
-//    } yield PasswordInfo(hasher.entryName, pw.value.value, v.salt)
-
   private def loginInfoToAccountEmail(v: LoginInfo): AccountEmail =
     AccountEmail.unsafeFrom(v.providerKey)
 }

@@ -1,4 +1,4 @@
-package util.authentication
+package utility.authentication
 
 import com.mohiva.play.silhouette.api.actions.UnsecuredErrorHandler
 import play.api.mvc.Results.Redirect
@@ -13,7 +13,7 @@ import scala.concurrent.Future
   * `play.modules.disabled += "com.mohiva.play.silhouette.api.actions.UnsecuredErrorHandlerModule"`
   *
   */
-class CustomUnsecuredErrorHandler extends UnsecuredErrorHandler {
+final class CustomUnsecuredErrorHandler extends UnsecuredErrorHandler {
 
   /**
     * Called when a user is authenticated but not authorized.

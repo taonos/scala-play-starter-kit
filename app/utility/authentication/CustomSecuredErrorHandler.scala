@@ -1,4 +1,4 @@
-package util.authentication
+package utility.authentication
 
 import javax.inject.Inject
 

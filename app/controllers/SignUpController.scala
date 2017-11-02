@@ -7,9 +7,7 @@ import org.webjars.play.WebJarsUtil
 import play.api.i18n.I18nSupport
 import play.api.mvc._
 import Domain.service.AccountService
-import Domain.service.AccountService.{RegistrationSucceed, UserAlreadyExists}
 import forms.SignUpForm
-import eu.timepit.refined.auto._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -48,36 +46,36 @@ class SignUpController @Inject()(
     *
     * @return The result to display.
     */
-  def submit: Action[AnyContent] = silhouette.UnsecuredAction.async {
-    implicit request: Request[AnyContent] =>
-      SignUpForm.form.bindFromRequest.fold(
-        form => Future.successful(BadRequest(views.html.signUp(form))),
-        data => {
-          for {
-            registration <- accountService.register(
-              data.username,
-              data.email,
-              data.firstName,
-              data.lastName,
-              data.password
-            )
-            res <- registration match {
-              case UserAlreadyExists =>
-                Future.successful(
-                  Redirect(routes.SignUpController.view())
-                    .flashing(
-                      "warning" -> "Account already exists. Please choose a different name."
-                    )
-                )
-              case RegistrationSucceed(_) =>
-                Future.successful(
-                  Redirect(routes.SignInController.view())
-                    .flashing("info" -> "Sign up successful! Please sign in!")
-                )
-            }
-          } yield res
+  def submit: Action[AnyContent] = silhouette.UnsecuredAction.async { implicit request =>
+    import Domain.entity.SignUpStatus._
+    SignUpForm.form.bindFromRequest.fold(
+      form => Future.successful(BadRequest(views.html.signUp(form))),
+      data => {
+        for {
+          registration <- accountService.signUp(
+            data.username,
+            data.email,
+            data.firstName,
+            data.lastName,
+            data.password
+          )
+          res <- registration match {
+            case UserAlreadyExists =>
+              Future.successful(
+                Redirect(routes.SignUpController.view())
+                  .flashing(
+                    "warning" -> "Account already exists. Please choose a different name."
+                  )
+              )
+            case Success(_) =>
+              Future.successful(
+                Redirect(routes.SignInController.view())
+                  .flashing("info" -> "Sign up successful! Please sign in!")
+              )
+          }
+        } yield res
 
-        }
-      )
+      }
+    )
   }
 }
