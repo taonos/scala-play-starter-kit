@@ -124,6 +124,7 @@ lazy val dataAccessDependencies = Seq(
   JodaTime.core,
   Enumeratum.core,
   Refined.core,
+  Cats.core,
   CatsEffect.core
 ) ++ Silhouette.toSeq
 

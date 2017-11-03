@@ -33,7 +33,6 @@ class AccountManager @Inject()(accountRepo: AccountRepository,
 
     for {
       userRetrieved <- accountRepo.retrieve(loginInfo)
-//      a = userRetrieved.fold[AccountStatus](NotRegistered)(_ => AlreadyExists)
       result <- userRetrieved match {
         // save account info
         case None =>
