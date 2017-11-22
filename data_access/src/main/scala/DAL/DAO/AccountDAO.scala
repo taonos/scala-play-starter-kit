@@ -11,6 +11,8 @@ trait AccountDAO extends DbContextable {
     private implicit val updateExclusion =
       updateMeta[AccountTable](_.id, _.createdAt)
 
+    val tableName: String = "account"
+
     val table = quote(querySchema[AccountTable]("account"))
 
     private val filterById = quote { (id: AccountId) =>
@@ -53,8 +55,12 @@ trait AccountDAO extends DbContextable {
 
     def insertBatch(
         rows: Seq[AccountTable]
-    )(implicit ec: ExecutionContext): IO[Long, Effect.Write] =
-      IO.sequence(rows.map(insert)).map(_.length)
+    )(implicit ec: ExecutionContext): IO[Long, Effect.Write with Effect.Transaction] =
+      runIO(quote {
+        liftQuery(rows).foreach(v => table.insert(v))
+      }).transactional
+        .map(_.sum)
+//      IO.sequence(rows.map(insert)).map(_.length)
 
     def update(row: AccountTable)(implicit ec: ExecutionContext): IO[AccountTable, Effect.Write] =
       runIO(table.update(lift(row)))

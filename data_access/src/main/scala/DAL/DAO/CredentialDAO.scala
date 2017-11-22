@@ -12,6 +12,8 @@ trait CredentialDAO extends DbContextable {
     private implicit val updateExclusion =
       updateMeta[CredentialTable](_.id, _.createdAt)
 
+    val tableName: String = "credential"
+
     val table = quote(querySchema[CredentialTable]("credential"))
 
     private val filterById = quote { (id: CredentialId) =>
@@ -30,8 +32,13 @@ trait CredentialDAO extends DbContextable {
 
     def insertBatch(
         rows: Seq[CredentialTable]
-    )(implicit ec: ExecutionContext): IO[Long, Effect.Write] =
-      IO.sequence(rows.map(insert)).map(_.length)
+    )(implicit ec: ExecutionContext): IO[Long, Effect.Write with Effect.Transaction] = {
+      runIO(quote {
+        liftQuery(rows).foreach(v => table.insert(v))
+      }).transactional
+        .map(_.sum)
+    }
+//      IO.sequence(rows.map(insert)).map(_.length)
 
     def update(
         row: CredentialTable
