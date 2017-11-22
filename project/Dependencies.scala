@@ -11,6 +11,7 @@ object Dependencies {
     val akka = "2.4.18"
     val circe = "0.9.0-M2"
     val monix = "3.0.0-M1"
+    val monocle = "1.5.0-cats-M2"
   }
 
   object Library {
@@ -132,6 +133,18 @@ object Dependencies {
         : ModuleID = "eu.timepit" %% "refined-pureconfig" % "0.8.4" // optional, JVM-only
 
       override val toSeq: Seq[ModuleID] = Seq(core, pureconfig)
+    }
+
+    object Monocle extends Entirety {
+      val core: ModuleID = "com.github.julien-truffaut" %% "monocle-core" % Version.monocle
+      val `macro`: ModuleID = "com.github.julien-truffaut" %% "monocle-macro" % Version.monocle
+      val refined: ModuleID = "com.github.julien-truffaut" %% "monocle-refined" % Version.monocle
+
+      override val toSeq: Seq[ModuleID] = Seq(core, `macro`, refined)
+    }
+
+    object Simulacrum {
+      val core: ModuleID = "com.github.mpilquist" %% "simulacrum" % "0.11.0"
     }
   }
 }

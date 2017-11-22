@@ -18,8 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class AccountActivationRepository @Inject()(val ctx: DbContext, clock: Clock)
     extends AccountActivationTokenDAO {
 
-  import AccountActivationRepository._
   import scala.concurrent.duration._
+  import mapping.implicits._
 
   /**
     * Creates a new auth token and saves it in the backing store.
@@ -52,21 +52,4 @@ class AccountActivationRepository @Inject()(val ctx: DbContext, clock: Clock)
   )(implicit ec: ExecutionContext): Future[Option[AccountActivationTokenTable]] =
     ctx.performIO(AccountActivationTokenDAO.findByPk(DAL.table.AccountActivationTokenId(id: UUID)))
 
-}
-
-object AccountActivationRepository {
-  private def authTokenToAuthTable(v: AccountActivationToken) = {
-    AccountActivationTokenTable(
-      AccountActivationTokenId(v.id: UUID),
-      AccountId(v.userID: UUID),
-      v.expiry
-    )
-  }
-
-  private def AuthTableToAuthToken(v: AccountActivationTokenTable) =
-    AccountActivationToken(
-      tag[Domain.entity.AccountActivationTokenId][UUID](v.id.value),
-      v.accountId.value,
-      v.expiry
-    )
 }

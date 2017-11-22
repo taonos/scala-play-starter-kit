@@ -9,3 +9,4 @@ final case class AccountCredentialTable(accountId: AccountId,
                                         salt: Option[String],
                                         createdAt: CreationTime,
                                         updatedAt: LastUpdateTime)
+    extends Table

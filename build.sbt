@@ -125,14 +125,18 @@ lazy val dataAccessDependencies = Seq(
   Enumeratum.core,
   Refined.core,
   Cats.core,
-  CatsEffect.core
-) ++ Silhouette.toSeq
+  CatsEffect.core,
+  Monocle.core
+) ++ Silhouette.toSeq ++ Monocle.toSeq
 
 lazy val migrationDependencies = Seq(PostgreSQL.db, FlywayDB.core)
 
 lazy val utilityDependencies = Seq(
   Refined.core,
-  Quill.asyncpostgresql
+  Quill.asyncpostgresql,
+  Cats.core,
+  Simulacrum.core,
+  Monocle.core
 )
 
 lazy val appDependencies = Seq(
@@ -193,9 +197,10 @@ lazy val population = (project in file("population"))
 lazy val utility = (project in file("utility"))
   .settings(commonSettings: _*)
   .settings(commonWartRemoverSettings: _*)
-  .settings {
-    libraryDependencies ++= utilityDependencies
-  }
+  .settings(
+    libraryDependencies ++= utilityDependencies,
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+  )
 
 lazy val configuration = (project in file("configuration"))
   .settings(commonSettings: _*)

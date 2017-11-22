@@ -5,7 +5,7 @@ import javax.inject.{Inject, Singleton}
 import DAL.DAO._
 import DAL.DbContext
 import DAL.table._
-import Domain.entity.{Account, LoginProvider}
+import Domain.entity.Account
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.api.util.PasswordInfo
@@ -22,8 +22,9 @@ class AccountRepository @Inject()(
     with AccountDAO
     with CredentialDAO
     with AccountCredentialDAO {
-  import AccountRepository._
+
   import ctx._
+  import mapping.implicits._
 
   /**
     * Retrieves a user that matches the specified login info.
@@ -33,7 +34,7 @@ class AccountRepository @Inject()(
     */
   override def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
     val res = for {
-      account <- AccountCredentialDAO.findBy(loginInfoToAccountEmail(loginInfo))
+      account <- AccountCredentialDAO.findBy(loginInfo)
       r = account.map(accountCredentialTableToUser(_, loginInfo))
     } yield r
 
@@ -47,7 +48,7 @@ class AccountRepository @Inject()(
                  passwordInfo: PasswordInfo,
                  loginInfo: LoginInfo): Future[Account] = {
     val res = for {
-      cred <- CredentialDAO.insert(passwordInfoToCredentialTable(passwordInfo))
+      cred <- CredentialDAO.insert(passwordInfo)
       acc <- AccountDAO.insert(
         AccountTable(
           new AccountId,
@@ -63,37 +64,4 @@ class AccountRepository @Inject()(
     performIO(res.transactional)
   }
 
-}
-
-object AccountRepository {
-
-  @throws[IllegalArgumentException]
-  private def accountTableToUser(v: AccountTable, l: LoginInfo): Account =
-    Account(
-      v.id.value,
-      v.username.value,
-      v.email.value,
-      LoginProvider.unsafeFrom(l.providerID, l.providerKey)
-    )
-
-  @throws[IllegalArgumentException]
-  private def accountCredentialTableToUser(v: AccountCredentialTable, l: LoginInfo): Account =
-    Account(
-      v.accountId.value,
-      v.username.value,
-      v.email.value,
-      LoginProvider.unsafeFrom(l.providerID, l.providerKey)
-    )
-
-  @throws[IllegalArgumentException]
-  private def loginInfoToAccountEmail(v: LoginInfo): AccountEmail =
-    AccountEmail.unsafeFrom(v.providerKey)
-
-  @throws[IllegalArgumentException]
-  private def passwordInfoToCredentialTable(v: PasswordInfo): CredentialTable =
-    CredentialTable(
-      Hasher.withName(v.hasher),
-      HashedPassword.unsafeFrom(v.password),
-      v.salt
-    )
 }

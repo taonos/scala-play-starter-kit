@@ -9,6 +9,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordInfo
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.persistence.daos.DelegableAuthInfoDAO
+
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -17,8 +18,11 @@ class CredentialRepository @Inject()(val ctx: DbContext)(
 ) extends DelegableAuthInfoDAO[PasswordInfo]
     with AccountDAO
     with CredentialDAO {
-  import CredentialRepository._
+
   import ctx._
+  import utility.persistence.implicits._
+  import mapping.implicits._
+  import cats.implicits._
 
   /**
     * Finds the auth info which is linked with the specified login info.
@@ -36,7 +40,7 @@ class CredentialRepository @Inject()(val ctx: DbContext)(
         case Some(id) => CredentialDAO.findBy(id)
         case None     => IO.successful(None)
       }
-      .map(_.map(credentialTableToPasswordInfo))
+      .map(_.mappingTo[PasswordInfo])
 
     performIO(res)
   }
@@ -127,18 +131,4 @@ class CredentialRepository @Inject()(val ctx: DbContext)(
 
     performIO(res)
   }
-}
-
-object CredentialRepository {
-
-  import eu.timepit.refined.auto._
-
-  private def credentialTableToPasswordInfo(v: CredentialTable): PasswordInfo =
-    PasswordInfo(v.hasher.entryName, v.hashedPassword.value, v.salt)
-
-  private def passwordInfoToCredentialTable(v: PasswordInfo): CredentialTable =
-    CredentialTable(Hasher.withName(v.hasher), HashedPassword.unsafeFrom(v.password), v.salt)
-
-  private def loginInfoToAccountEmail(v: LoginInfo): AccountEmail =
-    AccountEmail.unsafeFrom(v.providerKey)
 }
