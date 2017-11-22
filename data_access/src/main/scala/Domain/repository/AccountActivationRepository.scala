@@ -4,6 +4,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 import DAL.DAO.AccountActivationTokenDAO
+import DAL.DbContext
 import DAL.table.{AccountActivationTokenId, AccountActivationTokenTable, AccountId}
 import Domain.entity
 import Domain.entity.AccountActivationToken
@@ -14,7 +15,8 @@ import shapeless.tag
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AccountActivationRepository @Inject()(authTokenDAO: AccountActivationTokenDAO, clock: Clock) {
+class AccountActivationRepository @Inject()(val ctx: DbContext, clock: Clock)
+    extends AccountActivationTokenDAO {
 
   import AccountActivationRepository._
   import scala.concurrent.duration._
@@ -34,7 +36,9 @@ class AccountActivationRepository @Inject()(authTokenDAO: AccountActivationToken
       userID,
       clock.now.withZone(DateTimeZone.UTC).plusSeconds(expiry.toSeconds.toInt)
     )
-    authTokenDAO.insert(authTokenToAuthTable(token))
+    val res = AccountActivationTokenDAO.insert(authTokenToAuthTable(token))
+
+    ctx.performIO(res)
   }
 
   /**
@@ -43,8 +47,10 @@ class AccountActivationRepository @Inject()(authTokenDAO: AccountActivationToken
     * @param id The token ID to validate.
     * @return The token if it's valid, None otherwise.
     */
-  def validate(id: UUID)(implicit ec: ExecutionContext) =
-    authTokenDAO.findByPk(DAL.table.AccountActivationTokenId(id: UUID))
+  def validate(
+      id: UUID
+  )(implicit ec: ExecutionContext): Future[Option[AccountActivationTokenTable]] =
+    ctx.performIO(AccountActivationTokenDAO.findByPk(DAL.table.AccountActivationTokenId(id: UUID)))
 
 }
 
@@ -56,4 +62,11 @@ object AccountActivationRepository {
       v.expiry
     )
   }
+
+  private def AuthTableToAuthToken(v: AccountActivationTokenTable) =
+    AccountActivationToken(
+      tag[Domain.entity.AccountActivationTokenId][UUID](v.id.value),
+      v.accountId.value,
+      v.expiry
+    )
 }

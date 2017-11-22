@@ -1,48 +1,57 @@
 package DAL.DAO
 
-import javax.inject.{Inject, Singleton}
-
-import DAL.DbContext
 import DAL.table.{CredentialId, CredentialTable, HashedPassword, Hasher}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-@Singleton
-class CredentialDAO @Inject()(val ctx: DbContext) {
+trait CredentialDAO extends DbContextable {
   import ctx._
 
-  private implicit val updateExclusion =
-    updateMeta[CredentialTable](_.id, _.createdAt)
+  object CredentialDAO {
 
-  val table = quote(querySchema[CredentialTable]("credential"))
+    private implicit val updateExclusion =
+      updateMeta[CredentialTable](_.id, _.createdAt)
 
-  private val filterById = quote { (id: CredentialId) =>
-    table.filter(_.id == id)
+    val table = quote(querySchema[CredentialTable]("credential"))
+
+    private val filterById = quote { (id: CredentialId) =>
+      table.filter(_.id == id)
+    }
+
+    def findBy(
+        pk: CredentialId
+    )(implicit ec: ExecutionContext): IO[Option[CredentialTable], Effect.Read] =
+      runIO(filterById(lift(pk))).map(_.headOption)
+
+    def insert(
+        row: CredentialTable
+    )(implicit ec: ExecutionContext): IO[CredentialTable, Effect.Write] =
+      runIO(table.insert(lift(row))).map(_ => row)
+
+    def insertBatch(
+        rows: Seq[CredentialTable]
+    )(implicit ec: ExecutionContext): IO[Long, Effect.Write] =
+      IO.sequence(rows.map(insert)).map(_.length)
+
+    def update(
+        row: CredentialTable
+    )(implicit ec: ExecutionContext): IO[CredentialTable, Effect.Write] =
+      runIO(table.update(lift(row))).map(_ => row)
+
+    def updatePassword(
+        id: CredentialId,
+        hasher: Hasher,
+        password: HashedPassword,
+        salt: Option[String]
+    )(implicit ec: ExecutionContext): IO[Long, Effect.Write] =
+      runIO(
+        filterById(lift(id))
+          .update({ _.hasher -> lift(hasher) }, { _.hasher -> lift(hasher) }, {
+            _.hashedPassword -> lift(password)
+          })
+      )
+
+    def deleteBy(id: CredentialId)(implicit ec: ExecutionContext): IO[Unit, Effect.Write] =
+      runIO(filterById(lift(id)).delete).map(_ => ())
   }
-
-  def findBy(pk: CredentialId)(implicit ec: ExecutionContext): Future[Option[CredentialTable]] =
-    run(filterById(lift(pk))).map(_.headOption)
-
-  def insert(row: CredentialTable)(implicit ec: ExecutionContext): Future[CredentialTable] =
-    run(table.insert(lift(row))).map(_ => row)
-
-  def insertBatch(rows: Seq[CredentialTable])(implicit ec: ExecutionContext): Future[Long] =
-    Future.sequence(rows.map(insert)).map(_.length)
-
-  def update(row: CredentialTable)(implicit ec: ExecutionContext): Future[CredentialTable] =
-    run(table.update(lift(row))).map(_ => row)
-
-  def updatePassword(id: CredentialId,
-                     hasher: Hasher,
-                     password: HashedPassword,
-                     salt: Option[String])(implicit ec: ExecutionContext): Future[Long] =
-    run(
-      filterById(lift(id))
-        .update({ _.hasher -> lift(hasher) }, { _.hasher -> lift(hasher) }, {
-          _.hashedPassword -> lift(password)
-        })
-    )
-
-  def deleteBy(id: CredentialId)(implicit ec: ExecutionContext): Future[Unit] =
-    run(filterById(lift(id)).delete).map(_ => ())
 }

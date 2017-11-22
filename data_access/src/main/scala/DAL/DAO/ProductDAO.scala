@@ -1,12 +1,9 @@
 package DAL.DAO
 
-import DAL.DbContext
 import DAL.table.{ProductId, ProductTable}
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-@Singleton
-class ProductDAO @Inject()(val ctx: DbContext) {
+trait ProductDAO extends DbContextable {
   import ctx._
 
   private implicit val updateExclusion =
@@ -14,40 +11,40 @@ class ProductDAO @Inject()(val ctx: DbContext) {
 
   val table = quote(querySchema[ProductTable]("product"))
 
-  def findAll(implicit ec: ExecutionContext): Future[Seq[ProductTable]] =
-    run(table)
+  def findAll(implicit ec: ExecutionContext): IO[Seq[ProductTable], Effect.Read] =
+    runIO(table)
 
-  def findBy(pk: ProductId)(implicit ec: ExecutionContext): Future[Option[ProductTable]] =
-    run(
+  def findBy(pk: ProductId)(implicit ec: ExecutionContext): IO[Option[ProductTable], Effect.Read] =
+    runIO(
       table
         .filter(_.id == lift(pk))
     ).map(_.headOption)
 
-  def insert(row: ProductTable)(implicit ec: ExecutionContext): Future[ProductTable] =
-    run(
+  def insert(row: ProductTable)(implicit ec: ExecutionContext): IO[ProductTable, Effect.Write] =
+    runIO(
       table.insert(lift(row))
     ).map(_ => row)
 
-  def insertBatch(rows: Seq[ProductTable])(implicit ec: ExecutionContext): Future[Long] =
-    Future.sequence(rows.map(insert)).map(_.length)
+  def insertBatch(rows: Seq[ProductTable])(implicit ec: ExecutionContext): IO[Long, Effect.Write] =
+    IO.sequence(rows.map(insert)).map(_.length)
 //    Task.deferFutureAction { implicit scheduler =>
-//      run(quote {
+//      runIO(quote {
 //        liftQuery(rows).foreach(v => table.insert(v))
 //      })
 //    }
 //      .map(_.length)
 
-  def update(row: ProductTable)(implicit ec: ExecutionContext): Future[ProductTable] =
-    run(table.update(lift(row)))
+  def update(row: ProductTable)(implicit ec: ExecutionContext): IO[ProductTable, Effect.Write] =
+    runIO(table.update(lift(row)))
       .map(_ => row)
 
-  def updateBatch(rows: Seq[ProductTable])(implicit ec: ExecutionContext): Future[Long] =
-    run(quote {
+  def updateBatch(rows: Seq[ProductTable])(implicit ec: ExecutionContext): IO[Long, Effect.Write] =
+    runIO(quote {
       liftQuery(rows).foreach(v => table.update(v))
     }).map(_.length)
 
-  def deleteByPk(pk: ProductId)(implicit ec: ExecutionContext): Future[Unit] =
-    run(table.filter(_.id == lift(pk)).delete)
+  def deleteByPk(pk: ProductId)(implicit ec: ExecutionContext): IO[Unit, Effect.Write] =
+    runIO(table.filter(_.id == lift(pk)).delete)
       .map(_ => ())
 
 //  def insertBatch(products: Seq[ProductTable]): Task[Long] =

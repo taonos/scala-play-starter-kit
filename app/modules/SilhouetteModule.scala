@@ -87,10 +87,10 @@ class SilhouetteModule extends AbstractModule {
   }
 
   @Provides
-  def provideDelegate(ctx: DbContext, accountDAO: AccountDAO, credentialDAO: CredentialDAO)(
+  def provideDelegate(ctx: DbContext)(
       implicit ec: ExecutionContext
   ): DelegableAuthInfoDAO[PasswordInfo] = {
-    new CredentialRepository(ctx, accountDAO, credentialDAO)
+    new CredentialRepository(ctx)
   }
 
   //  @Provides

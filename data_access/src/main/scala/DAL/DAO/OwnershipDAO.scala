@@ -1,12 +1,9 @@
 package DAL.DAO
 
-import javax.inject.{Inject, Singleton}
 import DAL.table.{OwnershipId, OwnershipTable}
-import DAL.DbContext
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-@Singleton
-class OwnershipDAO @Inject()(val ctx: DbContext) {
+trait OwnershipDAO extends DbContextable {
   import ctx._
 
   private implicit val updateExclusion =
@@ -14,39 +11,45 @@ class OwnershipDAO @Inject()(val ctx: DbContext) {
 
   val table = quote(querySchema[OwnershipTable]("ownership"))
 
-  def findAll(implicit ec: ExecutionContext): Future[Seq[OwnershipTable]] =
-    run(table)
+  def findAll(implicit ec: ExecutionContext): IO[Seq[OwnershipTable], Effect.Read] =
+    runIO(table)
 
-  def findByPk(pk: OwnershipId)(implicit ec: ExecutionContext): Future[Option[OwnershipTable]] =
-    run(
+  def findByPk(
+      pk: OwnershipId
+  )(implicit ec: ExecutionContext): IO[Option[OwnershipTable], Effect.Read] =
+    runIO(
       table
         .filter(v => v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId))
     ).map(_.headOption)
 
-  def insert(row: OwnershipTable)(implicit ec: ExecutionContext): Future[OwnershipTable] =
-    run(table.insert(lift(row)))
+  def insert(row: OwnershipTable)(implicit ec: ExecutionContext): IO[OwnershipTable, Effect.Write] =
+    runIO(table.insert(lift(row)))
       .map(_ => row)
 
-  def insertBatch(rows: Seq[OwnershipTable])(implicit ec: ExecutionContext): Future[Long] =
-    Future.sequence(rows.map(insert)).map(_.length)
+  def insertBatch(
+      rows: Seq[OwnershipTable]
+  )(implicit ec: ExecutionContext): IO[Long, Effect.Write] =
+    IO.sequence(rows.map(insert)).map(_.length)
 //    Task.deferFutureAction { implicit scheduler =>
-//      run(quote {
+//      runIO(quote {
 //        liftQuery(rows).foreach(v => table.insert(v))
 //      })
 //    }
 //      .map(_.length)
 
-  def update(row: OwnershipTable)(implicit ec: ExecutionContext): Future[OwnershipTable] =
-    run(table.update(lift(row)))
+  def update(row: OwnershipTable)(implicit ec: ExecutionContext): IO[OwnershipTable, Effect.Write] =
+    runIO(table.update(lift(row)))
       .map(_ => row)
 
-  def updateBatch(rows: Seq[OwnershipTable])(implicit ec: ExecutionContext): Future[Long] =
-    run(quote {
+  def updateBatch(
+      rows: Seq[OwnershipTable]
+  )(implicit ec: ExecutionContext): IO[Long, Effect.Write] =
+    runIO(quote {
       liftQuery(rows).foreach(v => table.update(v))
     }).map(_.length)
 
-  def deleteByPk(pk: OwnershipId)(implicit ec: ExecutionContext): Future[Unit] =
-    run(
+  def deleteByPk(pk: OwnershipId)(implicit ec: ExecutionContext): IO[Unit, Effect.Write] =
+    runIO(
       table
         .filter(v => v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId))
         .delete

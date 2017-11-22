@@ -2,7 +2,7 @@ package Domain.repository
 
 import javax.inject.{Inject, Singleton}
 
-import DAL.DAO.{AccountCredentialDAO, AccountDAO, CredentialDAO}
+import DAL.DAO._
 import DAL.DbContext
 import DAL.table._
 import Domain.entity.{Account, LoginProvider}
@@ -16,12 +16,12 @@ import utility.RefinedTypes.{EmailString, NonEmptyString, UsernameString}
 
 @Singleton
 class AccountRepository @Inject()(
-    val ctx: DbContext,
-    accountDAO: AccountDAO,
-    credentialDAO: CredentialDAO,
-    accountCredentialDAO: AccountCredentialDAO
+    val ctx: DbContext
 )(implicit ec: ExecutionContext)
-    extends IdentityService[Account] {
+    extends IdentityService[Account]
+    with AccountDAO
+    with CredentialDAO
+    with AccountCredentialDAO {
   import AccountRepository._
   import ctx._
 
@@ -31,11 +31,14 @@ class AccountRepository @Inject()(
     * @param loginInfo The login info to retrieve a user.
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
-  override def retrieve(loginInfo: LoginInfo): Future[Option[Account]] =
-    for {
-      account <- accountCredentialDAO.findBy(loginInfoToAccountEmail(loginInfo))
+  override def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
+    val res = for {
+      account <- AccountCredentialDAO.findBy(loginInfoToAccountEmail(loginInfo))
       r = account.map(accountCredentialTableToUser(_, loginInfo))
     } yield r
+
+    performIO(res)
+  }
 
   def createUser(username: UsernameString,
                  email: EmailString,
@@ -43,25 +46,21 @@ class AccountRepository @Inject()(
                  lastname: String,
                  passwordInfo: PasswordInfo,
                  loginInfo: LoginInfo): Future[Account] = {
+    val res = for {
+      cred <- CredentialDAO.insert(passwordInfoToCredentialTable(passwordInfo))
+      acc <- AccountDAO.insert(
+        AccountTable(
+          new AccountId,
+          AccountUsername(username),
+          AccountEmail(email),
+          RefType.applyRef[NonEmptyString].unsafeFrom(firstname),
+          RefType.applyRef[NonEmptyString].unsafeFrom(lastname),
+          Some(cred.id)
+        )
+      )
+    } yield accountTableToUser(acc, loginInfo)
 
-    ctx
-      .transaction[AccountTable] { implicit c =>
-        for {
-          c <- credentialDAO.insert(passwordInfoToCredentialTable(passwordInfo))
-          a <- accountDAO.insert(
-            AccountTable(
-              new AccountId,
-              AccountUsername(username),
-              AccountEmail(email),
-              RefType.applyRef[NonEmptyString].unsafeFrom(firstname),
-              RefType.applyRef[NonEmptyString].unsafeFrom(lastname),
-              Some(c.id)
-            )
-          )
-        } yield a
-
-      }
-      .map(accountTableToUser(_, loginInfo))
+    performIO(res.transactional)
   }
 
 }

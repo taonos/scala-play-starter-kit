@@ -1,41 +1,42 @@
 package DAL.DAO
 
-import DAL.DbContext
-import javax.inject.{Inject, Singleton}
-
 import DAL.table._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-@Singleton
-class AccountCredentialDAO @Inject()(val ctx: DbContext) {
+trait AccountCredentialDAO extends DbContextable {
   import ctx._
 
-  val table = quote(querySchema[AccountCredentialTable]("account_credential"))
+  object AccountCredentialDAO {
 
-  private val filterById = quote { (id: AccountId) =>
-    table.filter(_.accountId == id)
-  }
+    val table = quote(querySchema[AccountCredentialTable]("account_credential"))
 
-  private val filterByUsername = quote { (u: AccountUsername) =>
-    table.filter(_.username == u)
-  }
-
-  private val filterByEmail = quote { (u: AccountEmail) =>
-    table.filter(_.email == u)
-  }
-
-  def existOne(email: AccountEmail)(implicit ec: ExecutionContext): Future[Boolean] =
-    run(filterByEmail(lift(email)).size).map {
-      case 1 => true
-      case _ => false
+    private val filterById = quote { (id: AccountId) =>
+      table.filter(_.accountId == id)
     }
 
-  def findBy(pk: AccountId)(implicit ec: ExecutionContext): Future[Option[AccountCredentialTable]] =
-    run(filterById(lift(pk))).map(_.headOption)
+    private val filterByUsername = quote { (u: AccountUsername) =>
+      table.filter(_.username == u)
+    }
 
-  def findBy(
-      email: AccountEmail
-  )(implicit ec: ExecutionContext): Future[Option[AccountCredentialTable]] =
-    run(filterByEmail(lift(email))).map(_.headOption)
+    private val filterByEmail = quote { (u: AccountEmail) =>
+      table.filter(_.email == u)
+    }
+
+    def existOne(email: AccountEmail)(implicit ec: ExecutionContext): IO[Boolean, Effect.Read] =
+      runIO(filterByEmail(lift(email)).size).map {
+        case 1 => true
+        case _ => false
+      }
+
+    def findBy(
+        pk: AccountId
+    )(implicit ec: ExecutionContext): IO[Option[AccountCredentialTable], Effect.Read] =
+      runIO(filterById(lift(pk))).map(_.headOption)
+
+    def findBy(
+        email: AccountEmail
+    )(implicit ec: ExecutionContext): IO[Option[AccountCredentialTable], Effect.Read] =
+      runIO(filterByEmail(lift(email))).map(_.headOption)
+  }
 }

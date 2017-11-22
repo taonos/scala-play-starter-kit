@@ -1,69 +1,71 @@
 package DAL.DAO
 
-import javax.inject.{Inject, Singleton}
-import DAL.DbContext
 import DAL.table.{AccountActivationTokenId, AccountActivationTokenTable}
 import org.joda.time.DateTime
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-@Singleton
-class AccountActivationTokenDAO @Inject()(val ctx: DbContext) {
+trait AccountActivationTokenDAO extends DbContextable {
   import ctx._
 
-  private implicit val updateExclusion =
-    updateMeta[AccountActivationTokenTable](_.id, _.createdAt)
+  object AccountActivationTokenDAO {
 
-  val table = quote(querySchema[AccountActivationTokenTable]("account_activation_token"))
+    private implicit val updateExclusion =
+      updateMeta[AccountActivationTokenTable](_.id, _.createdAt)
 
-  def findAll(implicit ec: ExecutionContext): Future[Seq[AccountActivationTokenTable]] =
-    run(table)
+    val table = quote(querySchema[AccountActivationTokenTable]("account_activation_token"))
 
-  /**
-    * Finds a token by its ID.
-    *
-    * @param pk The unique token ID.
-    * @return The found token or None if no token for the given ID could be found.
-    */
-  def findByPk(
-      pk: AccountActivationTokenId
-  )(implicit ec: ExecutionContext): Future[Option[AccountActivationTokenTable]] =
-    run(
-      table
-        .filter(_.id == lift(pk))
-    ).map(_.headOption)
+    def findAll(implicit ec: ExecutionContext): IO[Seq[AccountActivationTokenTable], Effect.Read] =
+      runIO(table)
 
-  def insert(
-      row: AccountActivationTokenTable
-  )(implicit ec: ExecutionContext): Future[AccountActivationTokenTable] =
-    run(table.insert(lift(row)))
-      .map(_ => row)
+    /**
+      * Finds a token by its ID.
+      *
+      * @param pk The unique token ID.
+      * @return The found token or None if no token for the given ID could be found.
+      */
+    def findByPk(
+        pk: AccountActivationTokenId
+    )(implicit ec: ExecutionContext): IO[Option[AccountActivationTokenTable], Effect.Read] =
+      runIO(
+        table
+          .filter(_.id == lift(pk))
+      ).map(_.headOption)
 
-  def insertBatch(rows: Seq[AccountActivationTokenTable])(
-      implicit ec: ExecutionContext
-  ): Future[Long] = ???
+    def insert(
+        row: AccountActivationTokenTable
+    )(implicit ec: ExecutionContext): IO[AccountActivationTokenTable, Effect.Write] =
+      runIO(table.insert(lift(row)))
+        .map(_ => row)
 
-  def update(row: AccountActivationTokenTable)(
-      implicit ec: ExecutionContext
-  ): Future[AccountActivationTokenTable] = ???
+    def insertBatch(rows: Seq[AccountActivationTokenTable])(
+        implicit ec: ExecutionContext
+    ): IO[Long, Effect.Write] = ???
 
-  def updateBatch(rows: Seq[AccountActivationTokenTable])(
-      implicit ec: ExecutionContext
-  ): Future[Long] = ???
+    def update(row: AccountActivationTokenTable)(
+        implicit ec: ExecutionContext
+    ): IO[AccountActivationTokenTable, Effect.Write] = ???
 
-  /**
-    * Removes the token for the given ID.
-    *
-    * @param pk The ID for which the token should be removed.
-    * @return A task
-    */
-  def deleteByPk(pk: AccountActivationTokenId)(implicit ec: ExecutionContext): Future[Unit] =
-    run(table.filter(_.id == lift(pk)).delete)
-      .map(_ => ())
+    def updateBatch(rows: Seq[AccountActivationTokenTable])(
+        implicit ec: ExecutionContext
+    ): IO[Long, Effect.Write] = ???
 
-  /**
-    * Finds expired tokens.
-    *
-    * @param expiry The current date time.
-    */
-  def findByExpiry(expiry: DateTime)(implicit ec: ExecutionContext) = ???
+    /**
+      * Removes the token for the given ID.
+      *
+      * @param pk The ID for which the token should be removed.
+      * @return A task
+      */
+    def deleteByPk(
+        pk: AccountActivationTokenId
+    )(implicit ec: ExecutionContext): IO[Unit, Effect.Write] =
+      runIO(table.filter(_.id == lift(pk)).delete)
+        .map(_ => ())
+
+    /**
+      * Finds expired tokens.
+      *
+      * @param expiry The current date time.
+      */
+    def findByExpiry(expiry: DateTime)(implicit ec: ExecutionContext) = ???
+  }
 }
