@@ -6,7 +6,7 @@ import DAL.DbContext
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class OwnershipDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
+class OwnershipDAO @Inject()(val ctx: DbContext) {
   import ctx._
 
   private implicit val updateExclusion =
@@ -14,20 +14,20 @@ class OwnershipDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) 
 
   val table = quote(querySchema[OwnershipTable]("ownership"))
 
-  def findAll: Future[Seq[OwnershipTable]] =
+  def findAll(implicit ec: ExecutionContext): Future[Seq[OwnershipTable]] =
     run(table)
 
-  def findByPk(pk: OwnershipId): Future[Option[OwnershipTable]] =
+  def findByPk(pk: OwnershipId)(implicit ec: ExecutionContext): Future[Option[OwnershipTable]] =
     run(
       table
         .filter(v => v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId))
     ).map(_.headOption)
 
-  def insert(row: OwnershipTable): Future[OwnershipTable] =
+  def insert(row: OwnershipTable)(implicit ec: ExecutionContext): Future[OwnershipTable] =
     run(table.insert(lift(row)))
       .map(_ => row)
 
-  def insertBatch(rows: Seq[OwnershipTable]): Future[Long] =
+  def insertBatch(rows: Seq[OwnershipTable])(implicit ec: ExecutionContext): Future[Long] =
     Future.sequence(rows.map(insert)).map(_.length)
 //    Task.deferFutureAction { implicit scheduler =>
 //      run(quote {
@@ -36,16 +36,16 @@ class OwnershipDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) 
 //    }
 //      .map(_.length)
 
-  def update(row: OwnershipTable): Future[OwnershipTable] =
+  def update(row: OwnershipTable)(implicit ec: ExecutionContext): Future[OwnershipTable] =
     run(table.update(lift(row)))
       .map(_ => row)
 
-  def updateBatch(rows: Seq[OwnershipTable]): Future[Long] =
+  def updateBatch(rows: Seq[OwnershipTable])(implicit ec: ExecutionContext): Future[Long] =
     run(quote {
       liftQuery(rows).foreach(v => table.update(v))
     }).map(_.length)
 
-  def deleteByPk(pk: OwnershipId): Future[Unit] =
+  def deleteByPk(pk: OwnershipId)(implicit ec: ExecutionContext): Future[Unit] =
     run(
       table
         .filter(v => v.id.accountId == lift(pk.accountId) && v.id.productId == lift(pk.productId))

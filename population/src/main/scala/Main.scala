@@ -11,14 +11,14 @@ import com.mohiva.play.silhouette.password.BCryptSha256PasswordHasher
 object Main extends App {
 
   val hasher = new BCryptSha256PasswordHasher()
-  val ec = monix.execution.Scheduler.Implicits.global
+  implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
 
-  val ctx = new DbContext()
-  import ctx._
-  val credentialDAO = new CredentialDAO(ctx)(ec)
-  val productDAO = new ProductDAO(ctx)(ec)
-  val accountDAO = new AccountDAO(ctx)(ec)
-  val ownershipDAO = new OwnershipDAO(ctx)(ec)
+  val _ctx = new DbContext()
+  import _ctx._
+  val credentialDAO = new CredentialDAO(_ctx)
+  val productDAO = new ProductDAO(_ctx)
+  val accountDAO = new AccountDAO(_ctx)
+  val ownershipDAO = new OwnershipDAO(_ctx)
 
   val credentialIds = Seq(
     CredentialId(UUID.fromString("c32cb561-4a12-4531-abb3-678cce62a103")),
@@ -88,7 +88,7 @@ object Main extends App {
     .zip(productUUIDs)
     .map(v => OwnershipTable(OwnershipId(v._1, v._2)))
 
-  val result = ctx.transaction { implicit ec =>
+  val result = _ctx.transaction { implicit ec =>
     for {
       _ <- credentialDAO.insertBatch(credentialEntities)
       _ <- accountDAO.insertBatch(accountEntities)

@@ -8,7 +8,7 @@ import DAL.table.{CredentialId, CredentialTable, HashedPassword, Hasher}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class CredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
+class CredentialDAO @Inject()(val ctx: DbContext) {
   import ctx._
 
   private implicit val updateExclusion =
@@ -20,22 +20,22 @@ class CredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext)
     table.filter(_.id == id)
   }
 
-  def findBy(pk: CredentialId): Future[Option[CredentialTable]] =
+  def findBy(pk: CredentialId)(implicit ec: ExecutionContext): Future[Option[CredentialTable]] =
     run(filterById(lift(pk))).map(_.headOption)
 
-  def insert(row: CredentialTable): Future[CredentialTable] =
+  def insert(row: CredentialTable)(implicit ec: ExecutionContext): Future[CredentialTable] =
     run(table.insert(lift(row))).map(_ => row)
 
-  def insertBatch(rows: Seq[CredentialTable]): Future[Long] =
+  def insertBatch(rows: Seq[CredentialTable])(implicit ec: ExecutionContext): Future[Long] =
     Future.sequence(rows.map(insert)).map(_.length)
 
-  def update(row: CredentialTable): Future[CredentialTable] =
+  def update(row: CredentialTable)(implicit ec: ExecutionContext): Future[CredentialTable] =
     run(table.update(lift(row))).map(_ => row)
 
   def updatePassword(id: CredentialId,
                      hasher: Hasher,
                      password: HashedPassword,
-                     salt: Option[String]): Future[Long] =
+                     salt: Option[String])(implicit ec: ExecutionContext): Future[Long] =
     run(
       filterById(lift(id))
         .update({ _.hasher -> lift(hasher) }, { _.hasher -> lift(hasher) }, {
@@ -43,6 +43,6 @@ class CredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext)
         })
     )
 
-  def deleteBy(id: CredentialId): Future[Unit] =
+  def deleteBy(id: CredentialId)(implicit ec: ExecutionContext): Future[Unit] =
     run(filterById(lift(id)).delete).map(_ => ())
 }

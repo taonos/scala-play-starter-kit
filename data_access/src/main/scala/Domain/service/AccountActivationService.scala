@@ -5,6 +5,8 @@ import javax.inject.{Inject, Singleton}
 
 import Domain.repository.AccountActivationRepository
 
+import scala.concurrent.ExecutionContext
+
 /**
   * Handles actions to auth tokens.
   *
@@ -23,7 +25,7 @@ class AccountActivationService @Inject()(
     * @param expiry The duration a token expires.
     * @return The saved auth token.
     */
-  def create(id: UUID, expiry: FiniteDuration = 5.minutes) =
+  def create(id: UUID, expiry: FiniteDuration = 5.minutes)(implicit ec: ExecutionContext) =
     authTokenRepo.create(id, expiry)
 
   /**
@@ -32,5 +34,5 @@ class AccountActivationService @Inject()(
     * @param id The token ID to validate.
     * @return The token if it's valid, None otherwise.
     */
-  def validate(id: UUID) = authTokenRepo.validate(id)
+  def validate(id: UUID)(implicit ec: ExecutionContext) = authTokenRepo.validate(id)
 }

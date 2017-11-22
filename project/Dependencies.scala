@@ -98,7 +98,7 @@ object Dependencies {
     }
 
     object Quill {
-      val asyncpostgresql: ModuleID = "io.getquill" %% "quill-async-postgres" % "1.4.0"
+      val asyncpostgresql: ModuleID = "io.getquill" %% "quill-async-postgres" % "2.2.0"
     }
 
     object WebJars extends Entirety {

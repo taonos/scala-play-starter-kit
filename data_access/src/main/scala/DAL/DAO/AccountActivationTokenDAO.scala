@@ -7,16 +7,15 @@ import org.joda.time.DateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AccountActivationTokenDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext)
-    extends DAOCrudWithPk[Future, AccountActivationTokenTable, AccountActivationTokenId] {
+class AccountActivationTokenDAO @Inject()(val ctx: DbContext) {
   import ctx._
 
   private implicit val updateExclusion =
     updateMeta[AccountActivationTokenTable](_.id, _.createdAt)
 
-  override val table = quote(querySchema[AccountActivationTokenTable]("account_activation_token"))
+  val table = quote(querySchema[AccountActivationTokenTable]("account_activation_token"))
 
-  override def findAll: Future[Seq[AccountActivationTokenTable]] =
+  def findAll(implicit ec: ExecutionContext): Future[Seq[AccountActivationTokenTable]] =
     run(table)
 
   /**
@@ -25,21 +24,31 @@ class AccountActivationTokenDAO @Inject()(val ctx: DbContext)(implicit ec: Execu
     * @param pk The unique token ID.
     * @return The found token or None if no token for the given ID could be found.
     */
-  override def findByPk(pk: AccountActivationTokenId): Future[Option[AccountActivationTokenTable]] =
+  def findByPk(
+      pk: AccountActivationTokenId
+  )(implicit ec: ExecutionContext): Future[Option[AccountActivationTokenTable]] =
     run(
       table
         .filter(_.id == lift(pk))
     ).map(_.headOption)
 
-  override def insert(row: AccountActivationTokenTable): Future[AccountActivationTokenTable] =
+  def insert(
+      row: AccountActivationTokenTable
+  )(implicit ec: ExecutionContext): Future[AccountActivationTokenTable] =
     run(table.insert(lift(row)))
       .map(_ => row)
 
-  override def insertBatch(rows: Seq[AccountActivationTokenTable]): Future[Long] = ???
+  def insertBatch(rows: Seq[AccountActivationTokenTable])(
+      implicit ec: ExecutionContext
+  ): Future[Long] = ???
 
-  override def update(row: AccountActivationTokenTable): Future[AccountActivationTokenTable] = ???
+  def update(row: AccountActivationTokenTable)(
+      implicit ec: ExecutionContext
+  ): Future[AccountActivationTokenTable] = ???
 
-  override def updateBatch(rows: Seq[AccountActivationTokenTable]): Future[Long] = ???
+  def updateBatch(rows: Seq[AccountActivationTokenTable])(
+      implicit ec: ExecutionContext
+  ): Future[Long] = ???
 
   /**
     * Removes the token for the given ID.
@@ -47,7 +56,7 @@ class AccountActivationTokenDAO @Inject()(val ctx: DbContext)(implicit ec: Execu
     * @param pk The ID for which the token should be removed.
     * @return A task
     */
-  override def deleteByPk(pk: AccountActivationTokenId): Future[Unit] =
+  def deleteByPk(pk: AccountActivationTokenId)(implicit ec: ExecutionContext): Future[Unit] =
     run(table.filter(_.id == lift(pk)).delete)
       .map(_ => ())
 
@@ -56,5 +65,5 @@ class AccountActivationTokenDAO @Inject()(val ctx: DbContext)(implicit ec: Execu
     *
     * @param expiry The current date time.
     */
-  def findByExpiry(expiry: DateTime) = ???
+  def findByExpiry(expiry: DateTime)(implicit ec: ExecutionContext) = ???
 }

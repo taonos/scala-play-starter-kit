@@ -8,7 +8,7 @@ import DAL.table._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AccountCredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionContext) {
+class AccountCredentialDAO @Inject()(val ctx: DbContext) {
   import ctx._
 
   val table = quote(querySchema[AccountCredentialTable]("account_credential"))
@@ -25,15 +25,17 @@ class AccountCredentialDAO @Inject()(val ctx: DbContext)(implicit ec: ExecutionC
     table.filter(_.email == u)
   }
 
-  def existOne(email: AccountEmail): Future[Boolean] =
+  def existOne(email: AccountEmail)(implicit ec: ExecutionContext): Future[Boolean] =
     run(filterByEmail(lift(email)).size).map {
       case 1 => true
       case _ => false
     }
 
-  def findBy(pk: AccountId): Future[Option[AccountCredentialTable]] =
+  def findBy(pk: AccountId)(implicit ec: ExecutionContext): Future[Option[AccountCredentialTable]] =
     run(filterById(lift(pk))).map(_.headOption)
 
-  def findBy(email: AccountEmail): Future[Option[AccountCredentialTable]] =
+  def findBy(
+      email: AccountEmail
+  )(implicit ec: ExecutionContext): Future[Option[AccountCredentialTable]] =
     run(filterByEmail(lift(email))).map(_.headOption)
 }
